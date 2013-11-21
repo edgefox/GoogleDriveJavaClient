@@ -1,11 +1,13 @@
 package filesystem;
 
+import java.io.Serializable;
+
 /**
  * User: Ivan Lyutov
  * Date: 11/20/13
  * Time: 1:26 PM
  */
-public class FileSystemRevision {
+public class FileSystemRevision implements Serializable {
     private long revisionNumber;
 
     public FileSystemRevision(long revisionNumber) {

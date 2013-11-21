@@ -3,8 +3,8 @@ package service;
 import com.google.inject.Singleton;
 import filesystem.*;
 import filesystem.change.ChangesApplier;
-import filesystem.change.watcher.LocalChangesWatcher;
-import filesystem.change.watcher.RemoteChangesWatcher;
+import filesystem.change.local.LocalChangesWatcher;
+import filesystem.change.remote.RemoteChangesWatcher;
 import org.apache.commons.io.FileUtils;
 
 import javax.inject.Inject;
@@ -47,13 +47,14 @@ public class FileSystemManager {
         List<FileMetadata> root = googleDriveService.listDirectory(id);
         for (FileMetadata fileMetadata : root) {
             File file = new File(path, fileMetadata.getTitle());
+            Path imagePath = trackedPath.relativize(Paths.get(file.getAbsolutePath()));
             if (fileMetadata.isDir()) {
                 FileUtils.forceMkdir(file);
-                fileSystem.update(trackedPath.relativize(Paths.get(path)), fileMetadata);
+                fileSystem.update(imagePath, fileMetadata);
                 reflectRemoteStorage(fileMetadata.getId(), file.getAbsolutePath());
             } else {
                 googleDriveService.downloadFile(fileMetadata.getId(), file);
-                fileSystem.update(trackedPath.relativize(Paths.get(path)), fileMetadata);
+                fileSystem.update(imagePath, fileMetadata);
             }
         }
     }

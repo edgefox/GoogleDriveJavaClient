@@ -3,6 +3,7 @@ import com.google.inject.name.Names;
 import filesystem.FileSystem;
 import filesystem.FileSystemProvider;
 import filesystem.FileSystemRevision;
+import filesystem.FileSystemRevisionProvider;
 import org.apache.log4j.Logger;
 import service.FileSystemManager;
 
@@ -12,6 +13,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * User: Ivan Lyutov
@@ -34,7 +37,8 @@ public class Main extends AbstractModule {
         loadProperties(binder());
         bind(Path.class).toInstance(DEFAULT_PATH);
         bind(FileSystem.class).toProvider(new FileSystemProvider());
-        bind(FileSystemRevision.class).toInstance(new FileSystemRevision(0));
+        bind(FileSystemRevision.class).toProvider(new FileSystemRevisionProvider());
+        bind(ScheduledExecutorService.class).toInstance(Executors.newSingleThreadScheduledExecutor());
     }
 
     private void loadProperties(Binder binder) {

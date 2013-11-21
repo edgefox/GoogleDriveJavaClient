@@ -3,12 +3,14 @@ package filesystem;
 import com.google.api.services.drive.model.File;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.io.Serializable;
+
 /**
  * User: Ivan Lyutov
  * Date: 10/2/13
  * Time: 1:22 AM
  */
-public class FileMetadata {
+public class FileMetadata implements Serializable {
     private String id;
     private String title;
     private boolean dir;

@@ -3,7 +3,7 @@ package filesystem;
 import org.apache.log4j.Logger;
 import service.GoogleDriveService;
 
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -20,17 +20,20 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class FileSystem implements Serializable {
     private static final Logger logger = Logger.getLogger(FileSystem.class);
+    private transient final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Trie<String, FileMetadata> trie;
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private volatile FileSystemRevision fileSystemRevision;
-    private final Path basePath;
+    private transient Path basePath;
 
     FileSystem(FileSystemRevision fileSystemRevision, Path basePath) {
         this.fileSystemRevision = fileSystemRevision;
         this.basePath = basePath;
-        trie = new Trie<String, FileMetadata>();
-        trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID, "root", true, null));
+        trie = new Trie<>();
+        trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID, 
+                                       GoogleDriveService.ROOT_DIR_ID, 
+                                       true, 
+                                       null));
     }
 
     public FileSystemRevision getFileSystemRevision() {
@@ -39,6 +42,10 @@ public class FileSystem implements Serializable {
 
     public void setFileSystemRevision(FileSystemRevision fileSystemRevision) {
         this.fileSystemRevision = fileSystemRevision;
+    }
+
+    public void setBasePath(Path basePath) {
+        this.basePath = basePath;
     }
 
     public void update(Path path, FileMetadata metadata) {
@@ -59,6 +66,11 @@ public class FileSystem implements Serializable {
                     current = current.addChild(child);
                 }
             }
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("data.db"))) {
+                objectOutputStream.writeObject(this);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to save fileSystem", e);
         } finally {
             logger.info(String.format("FileSystem has been updated with: %s", path));
             lock.writeLock().unlock();

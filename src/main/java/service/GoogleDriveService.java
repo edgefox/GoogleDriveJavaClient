@@ -6,6 +6,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.GenericUrl;
@@ -18,8 +19,9 @@ import com.google.api.services.drive.model.*;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import filesystem.FileMetadata;
-import filesystem.change.RemoteChangePackage;
+import filesystem.FileSystemRevision;
 import filesystem.change.FileSystemChange;
+import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
@@ -77,7 +79,10 @@ public class GoogleDriveService {
     private static final String DELTA_FIELDS_ALL_INFO = "items(deleted,file,fileId),largestChangeId,nextPageToken";
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
     private static long MAX_TIMEOUT = 60;
-    private static long TIMEOUT_STEP = 10;
+    private static long TIMEOUT_STEP = 5;
+    
+    @Inject
+    private FileSystemRevision revision;
 
     @Inject
     public GoogleDriveService(@Named("REDIRECT_URI") String REDIRECT_URI,
@@ -104,7 +109,8 @@ public class GoogleDriveService {
     }
 
     public About about() throws IOException {
-        return apiClient.about().get().setFields(DELTA_FIELDS_ONLY_ID).execute();
+        Drive.About.Get about = apiClient.about().get();
+        return (About) safeExecute(about.setFields(DELTA_FIELDS_ONLY_ID));
     }
 
     public FileMetadata upload(String folderId, java.io.File localFile) throws IOException {
@@ -272,29 +278,6 @@ public class GoogleDriveService {
         init();
     }
 
-    @SuppressWarnings("checked")
-    private static Object safeExecute(AbstractGoogleClientRequest request) throws IOException {
-        long timeout = 10;
-        Object result = null;
-        while (result == null && timeout < MAX_TIMEOUT) {
-            try {
-                result = request.execute();
-            } catch (SocketTimeoutException e) {
-                try {
-                    logger.info("Request timeout. Retrying...");
-                    TimeUnit.SECONDS.sleep(timeout);
-                    timeout += TIMEOUT_STEP;
-                } catch (InterruptedException e1) {
-                    logger.warn(e);
-                }
-            }
-        }
-
-        if (result == null) throw new IOException("Connection timeout");
-
-        return result;
-    }
-
     synchronized void handleRedirect() throws Exception {
         Server server = new Server(9999);
         ServletContextHandler handler = new ServletContextHandler();
@@ -319,5 +302,42 @@ public class GoogleDriveService {
         server.start();
         wait();
         server.stop();
+    }
+
+    @SuppressWarnings("checked")
+    private Object safeExecute(AbstractGoogleClientRequest request) throws IOException {
+        long timeout = 0;
+        Object result = null;
+        while (result == null && timeout < MAX_TIMEOUT) {
+            try {
+                result = request.execute();
+                if (request instanceof Drive.Files.Insert || 
+                    request instanceof Drive.Files.Update || 
+                    request instanceof Drive.Files.Delete) {
+                    if (request instanceof Drive.Files.Delete) {
+                        result = "deletion succeeded";
+                    }
+                    updateRevision();
+                }
+            } catch (SocketTimeoutException | GoogleJsonResponseException e) {
+                try {
+                    timeout += TIMEOUT_STEP;
+                    logger.warn(String.format("Request timeout. Retrying in %d seconds", timeout));
+                    TimeUnit.SECONDS.sleep(timeout);
+                } catch (InterruptedException e1) {
+                    logger.warn(e);
+                }
+            }
+        }
+
+        if (result == null) throw new IOException("Connection timeout");
+
+        return result;
+    }
+
+    private void updateRevision() throws IOException {
+        Drive.About.Get aboutRequest = apiClient.about().get();
+        About about = (About) safeExecute(aboutRequest);
+        revision.setRevisionNumber(about.getLargestChangeId());
     }
 }

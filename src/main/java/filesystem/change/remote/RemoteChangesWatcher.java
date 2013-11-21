@@ -1,8 +1,9 @@
-package filesystem.change.watcher;
+package filesystem.change.remote;
 
 import com.google.inject.Singleton;
 import filesystem.FileSystemRevision;
 import filesystem.change.RemoteChangePackage;
+import filesystem.change.ChangesWatcher;
 import org.apache.log4j.Logger;
 import service.GoogleDriveService;
 

@@ -1,7 +1,8 @@
-package filesystem.change.watcher;
+package filesystem.change.local;
 
 import com.google.inject.Singleton;
 import filesystem.change.FileSystemChange;
+import filesystem.change.ChangesWatcher;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -23,15 +24,18 @@ import static java.nio.file.StandardWatchEventKinds.*;
 @Singleton
 public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private static final Logger logger = Logger.getLogger(LocalChangesWatcher.class);
-    private final WatchService watchService;
-    private final Map<WatchKey, Path> watchKeyToPath;
+    static  {
+        watchService = null;
+        try {
+            watchService = FileSystems.getDefault().newWatchService();
+        } catch (IOException e) {
+            logger.error(e);
+        }
+    }
+    private static WatchService watchService;
+    private static Map<WatchKey, Path> watchKeyToPath = new HashMap<>();
     @Inject
-    private Path trackedPath;
-
-    public LocalChangesWatcher() throws IOException {
-        watchService = FileSystems.getDefault().newWatchService();
-        watchKeyToPath = new HashMap<WatchKey, Path>();
-    }       
+    private Path trackedPath;       
     
     public void start() throws IOException {
         registerAll(trackedPath);
@@ -60,9 +64,13 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
             while (!Thread.currentThread().isInterrupted()) {
                 WatchKey key;
                 try {
-                    key = watchService.take();
+                    key = watchService.poll(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     return;
+                }
+                
+                if (key == null) {
+                    break;
                 }
 
                 Path filePath = watchKeyToPath.get(key);
@@ -81,10 +89,10 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     Path name = ev.context();
                     Path child = filePath.resolve(name);
 
-                    changes.add(new FileSystemChange<Path>(child,
-                                                           child.getParent(),
-                                                           child.getFileName().toString(),
-                                                           child.toFile().isDirectory()));
+                    changes.add(new FileSystemChange<>(child,
+                                                       kind == ENTRY_DELETE ? null : child.getParent(),
+                                                       child.getFileName().toString(),
+                                                       child.toFile().isDirectory()));
                     logger.info(String.format("%s: %s\n", event.kind().name(), child));
 
                     if (kind == ENTRY_CREATE) {
