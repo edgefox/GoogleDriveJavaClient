@@ -38,7 +38,7 @@ public class LocalChangesHandler {
             tryHandleLocalChange(change, 3);
         }
         logger.info(String.format("Local changes have been handled: %s", localChanges));
-        
+
         return handledIds;
     }
 
@@ -47,12 +47,11 @@ public class LocalChangesHandler {
         try {
             logger.info(String.format("Trying to apply change: %s", change));
             Trie<String, FileMetadata> imageFile = fileSystem.get(trackedPath.relativize(change.getId()));
+            if (change.isDir()) {
+                createDirectory(change);
+            }
             if (imageFile == null && !change.isRemoved()) {
-                if (change.isDir()) {
-                    createDirectory(change);
-                } else {
-                    uploadLocalFile(change);
-                }
+                uploadLocalFile(change);
             } else if (imageFile != null) {
                 if (change.isRemoved()) {
                     deleteRemoteFile(imageFile);

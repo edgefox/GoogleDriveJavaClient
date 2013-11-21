@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,6 +29,7 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
     private GoogleDriveService googleDriveService;
     @Inject
     private volatile FileSystem fileSystem;
+    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public void start() throws IOException {
         logger.info("Trying to start RemoteChangesWatcher");

@@ -112,15 +112,22 @@ public class GoogleDriveService {
 
     public FileMetadata upload(String folderId, java.io.File localFile) throws IOException {
         logger.info(String.format("Trying to upload local file: %s", localFile));
+        
         File file = new File();
         file.setTitle(localFile.getName());
         ParentReference parent = new ParentReference();
         parent.setId(folderId);
         file.setParents(Arrays.asList(parent));
-
         FileContent mediaContent = new FileContent(null, localFile);
-        Drive.Files.Insert insert = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
-        File uploadedFile = (File) safeExecute(insert);
+
+        FileMetadata child = findChild(folderId, localFile.getName());
+        if (child != null) {
+            File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file));
+            return new FileMetadata(updatedFile);
+        }
+
+        Drive.Files.Insert insertedFile = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
+        File uploadedFile = (File) safeExecute(insertedFile);
         logger.info(String.format("File has been successfully uploaded: '%s'", localFile));
 
         return new FileMetadata(uploadedFile);

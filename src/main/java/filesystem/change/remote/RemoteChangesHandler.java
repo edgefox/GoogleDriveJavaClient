@@ -100,8 +100,8 @@ public class RemoteChangesHandler {
     }
 
     private void moveLocalFile(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile, File localFile) throws IOException {
-        Path parentPath = convertRemoteIdToLocal(change.getParentId());
-        File moveTo = parentPath.toFile();
+        Path fullParentPath = fileSystem.getPath(fileSystem.get(change.getParentId()));
+        File moveTo = fullParentPath.toFile();        
         FileUtils.copyFileToDirectory(localFile, moveTo);
         localFile.delete();
         fileSystem.move(imageFile, fileSystem.get(change.getParentId()));

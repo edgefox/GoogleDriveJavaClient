@@ -1,8 +1,6 @@
 package filesystem.change.local;
 
 import com.google.inject.Singleton;
-import filesystem.FileMetadata;
-import filesystem.Trie;
 import filesystem.change.ChangesWatcher;
 import filesystem.change.FileSystemChange;
 import org.apache.log4j.Logger;
@@ -12,9 +10,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -42,6 +39,8 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private Path trackedPath;
     @Inject
     private filesystem.FileSystem fileSystem;
+    @Inject
+    private ScheduledExecutorService executorService;
 
     public void start() throws IOException {
         logger.info("Trying to start LocalChangesWatcher");
@@ -97,7 +96,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     Path name = ev.context();
                     Path child = filePath.resolve(name);
                     
-                    if (handledEntries.remove(child)) {
+                    if ((kind == ENTRY_CREATE && !child.toFile().isDirectory()) || handledEntries.remove(child)) {
                         continue;
                     }
                     
