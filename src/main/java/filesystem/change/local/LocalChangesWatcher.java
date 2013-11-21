@@ -42,7 +42,6 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private Path trackedPath;
     @Inject
     private filesystem.FileSystem fileSystem;
-    private Set<Path> handledEntries = new HashSet<>();
 
     public void start() throws IOException {
         logger.info("Trying to start LocalChangesWatcher");
@@ -64,10 +63,6 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private void register(Path path) throws IOException {
         WatchKey watchKey = path.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         watchKeyToPath.put(watchKey, path);
-    }
-
-    public void ignoreChanges(Set<Path> handledEntries) {
-        this.handledEntries.addAll(handledEntries);
     }
 
     class PollTask implements Runnable {

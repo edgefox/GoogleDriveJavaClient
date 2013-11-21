@@ -80,9 +80,6 @@ public class GoogleDriveService {
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
     private static long MAX_TIMEOUT = 60;
     private static long TIMEOUT_STEP = 5;
-    
-    @Inject
-    private volatile FileSystem fileSystem;
 
     @Inject
     public GoogleDriveService(@Named("REDIRECT_URI") String REDIRECT_URI,
@@ -125,7 +122,7 @@ public class GoogleDriveService {
         Drive.Files.Insert insert = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
         File uploadedFile = (File) safeExecute(insert);
         logger.info(String.format("File has been successfully uploaded: '%s'", localFile));
-        
+
         return new FileMetadata(uploadedFile);
     }
 
@@ -141,7 +138,7 @@ public class GoogleDriveService {
         Drive.Files.Get get = apiClient.files().get(id);
         File file = (File) safeExecute(get);
         logger.info(String.format("Metadata for resource with id '%s' has been successfully retrieved", id));
-        
+
         return new FileMetadata(file);
     }
 
@@ -188,7 +185,7 @@ public class GoogleDriveService {
 
     public List<FileMetadata> listDirectory(String folderId) throws IOException {
         Drive.Children.List list = apiClient.children().list(folderId)
-                                                       .setQ(format("trashed = false and '%s' in parents", folderId));
+                .setQ(format("trashed = false and '%s' in parents", folderId));
         ChildList children = (ChildList) safeExecute(list);
         List<FileMetadata> resultList = new ArrayList<FileMetadata>(children.getItems().size());
         for (ChildReference childReference : children.getItems()) {
@@ -212,8 +209,8 @@ public class GoogleDriveService {
         FileOutputStream outputStream = null;
         try {
             HttpResponse resp = apiClient.getRequestFactory()
-                                         .buildGetRequest(downloadUrl)
-                                         .execute();
+                    .buildGetRequest(downloadUrl)
+                    .execute();
             inputStream = resp.getContent();
 
             FileUtils.forceMkdir(localFile.getParentFile());
@@ -226,7 +223,7 @@ public class GoogleDriveService {
             IOUtils.safeClose(outputStream);
         }
         logger.info(String.format("File has been successfully downloaded: %s", localFile));
-        
+
         return new FileMetadata(file);
     }
 
@@ -266,7 +263,7 @@ public class GoogleDriveService {
 
         List<ParentReference> parents = change.getFile().getParents();
         ParentReference parentReference = parents.get(0);
-        
+
         return parentReference.getIsRoot() ? "root" : parentReference.getId();
     }
 
@@ -311,13 +308,8 @@ public class GoogleDriveService {
         while (result == null && timeout < MAX_TIMEOUT) {
             try {
                 result = request.execute();
-                if (request instanceof Drive.Files.Insert || 
-                    request instanceof Drive.Files.Update || 
-                    request instanceof Drive.Files.Delete) {
-                    if (request instanceof Drive.Files.Delete) {
-                        result = "deletion succeeded";
-                    }
-                    updateRevision();
+                if (request instanceof Drive.Files.Delete) {
+                    result = "deletion succeeded";
                 }
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
                 try {
@@ -333,11 +325,5 @@ public class GoogleDriveService {
         if (result == null) throw new IOException("Connection timeout");
 
         return result;
-    }
-
-    private void updateRevision() throws IOException {
-        Drive.About.Get aboutRequest = apiClient.about().get();
-        About about = (About) safeExecute(aboutRequest);
-        fileSystem.updateFileSystemRevision(about.getLargestChangeId());
     }
 }

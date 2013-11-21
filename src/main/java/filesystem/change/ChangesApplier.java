@@ -3,6 +3,7 @@ package filesystem.change;
 import filesystem.change.local.LocalChangesHandler;
 import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesHandler;
+import filesystem.change.remote.RemoteChangesWatcher;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -25,6 +26,8 @@ public class ChangesApplier {
     @Inject
     private LocalChangesWatcher localChangesWatcher;
     @Inject
+    private RemoteChangesWatcher remoteChangesWatcher;
+    @Inject
     private ScheduledExecutorService executorService;
 
     public void start() {
@@ -38,9 +41,8 @@ public class ChangesApplier {
         @Override
         public void run() {
             logger.info("Change merge iteration started");
-            localChangesHandler.handle();
-            Set<Path> handledEntries = remoteChangesHandler.handle();
-            localChangesWatcher.ignoreChanges(handledEntries);
+            remoteChangesWatcher.ignoreChanges(localChangesHandler.handle());
+            localChangesWatcher.ignoreChanges(remoteChangesHandler.handle());
             logger.info("Change merge iteration ended");
         }
     }

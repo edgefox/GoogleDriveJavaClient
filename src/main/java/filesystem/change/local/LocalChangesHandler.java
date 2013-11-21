@@ -10,6 +10,7 @@ import service.GoogleDriveService;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -27,14 +28,18 @@ public class LocalChangesHandler {
     private LocalChangesWatcher localChangesWatcher;
     @Inject
     private GoogleDriveService googleDriveService;
-    
-    public void handle() {
+    private Set<String> handledIds = new HashSet<>();
+
+    public Set<String> handle() {
+        handledIds.clear();
         Set<FileSystemChange<Path>> localChanges = localChangesWatcher.getChangesCopy();
         logger.info(String.format("Trying to apply local changes: %s", localChanges));
         for (FileSystemChange<Path> change : localChanges) {
             tryHandleLocalChange(change, 3);
         }
         logger.info(String.format("Local changes have been handled: %s", localChanges));
+        
+        return handledIds;
     }
 
     private void tryHandleLocalChange(FileSystemChange<Path> change, int triesLeft) {
@@ -77,11 +82,13 @@ public class LocalChangesHandler {
         String parentId = parentImageFile.getModel().getId();
         FileMetadata fileMetadata = googleDriveService.createDirectory(parentId, change.getTitle());
         fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
+        handledIds.add(fileMetadata.getId());
     }
 
     private void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
         googleDriveService.delete(imageFile.getModel().getId());
         fileSystem.delete(imageFile);
+        handledIds.add(imageFile.getModel().getId());
     }
 
     private void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
@@ -94,5 +101,6 @@ public class LocalChangesHandler {
         FileMetadata fileMetadata = googleDriveService.upload(parent.getModel().getId(),
                                                               change.getId().toFile());
         fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
+        handledIds.add(fileMetadata.getId());
     }
 }

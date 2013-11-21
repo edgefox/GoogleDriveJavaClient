@@ -49,16 +49,7 @@ public class RemoteChangesHandler {
             Trie<String, FileMetadata> imageFile = fileSystem.get(change.getId());
             if (imageFile == null && !change.isRemoved()) {
                 if (change.isDir()) {
-                    Path parentPath = convertRemoteIdToLocal(change.getParentId());
-
-                    if (parentPath == null) {
-                        throw new IllegalStateException(String.format("Unable to handle change: %s", change));
-                    }
-
-                    File directory = new File(parentPath.toAbsolutePath().toFile(), change.getTitle());
-                    FileUtils.forceMkdir(directory);
-                    FileMetadata fileMetadata = new FileMetadata(change.getId(), change.getTitle(), change.isDir(), null);
-                    fileSystem.update(trackedPath.relativize(Paths.get(directory.getAbsolutePath())), fileMetadata);
+                    createDirectory(change);
                 } else {
                     downloadNewFile(change);
                 }
@@ -90,6 +81,22 @@ public class RemoteChangesHandler {
                 remoteChangesWatcher.changeHandled(change);
             }
         }
+    }
+
+    private void createDirectory(FileSystemChange<String> change) throws IOException {
+        Path parentPath = convertRemoteIdToLocal(change.getParentId());
+
+        if (parentPath == null) {
+            throw new IllegalStateException(String.format("Unable to handle change: %s", change));
+        }
+
+        Path fullParentPath = fileSystem.getPath(fileSystem.get(change.getParentId()));
+        File directory = new File(fullParentPath.toFile(), change.getTitle());
+        FileUtils.forceMkdir(directory);
+        FileMetadata fileMetadata = new FileMetadata(change.getId(), change.getTitle(), change.isDir(), null);
+        Path newDirectoryPath = Paths.get(directory.getAbsolutePath());
+        fileSystem.update(trackedPath.relativize(newDirectoryPath), fileMetadata);
+        handledPaths.add(newDirectoryPath);
     }
 
     private void moveLocalFile(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile, File localFile) throws IOException {
