@@ -47,7 +47,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
     }
 
     private void createNewFileSystem() {
-        fileSystem = new FileSystem(new FileSystemRevision(0), basePath);
+        fileSystem = new FileSystem(basePath);
         try {
             Files.walkFileTree(basePath, new SimpleFileVisitor<Path>() {
                 @Override

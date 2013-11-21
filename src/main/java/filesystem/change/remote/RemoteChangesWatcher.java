@@ -1,9 +1,9 @@
 package filesystem.change.remote;
 
 import com.google.inject.Singleton;
-import filesystem.FileSystemRevision;
-import filesystem.change.RemoteChangePackage;
+import filesystem.FileSystem;
 import filesystem.change.ChangesWatcher;
+import filesystem.change.RemoteChangePackage;
 import org.apache.log4j.Logger;
 import service.GoogleDriveService;
 
@@ -22,14 +22,18 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
     @Inject
     private GoogleDriveService googleDriveService;
     @Inject
-    private volatile FileSystemRevision fileSystemRevision;
+    private volatile FileSystem fileSystem;
 
     public void start() throws IOException {
-        if (fileSystemRevision.getRevisionNumber() == 0) {
+        logger.info("Trying to start RemoteChangesWatcher");
+        if (fileSystem.getFileSystemRevision() == 0) {
+            logger.info("Setting initial revision number");
             Long revisionNumber = googleDriveService.about().getLargestChangeId();
-            fileSystemRevision.setRevisionNumber(revisionNumber);
+            fileSystem.updateFileSystemRevision(revisionNumber);
+            logger.info(String.format("Initial revision number has been set to %d", revisionNumber));
         }
         executorService.scheduleWithFixedDelay(new PollTask(), 0, 10, TimeUnit.SECONDS);
+        logger.info("RemoteChangesWatcher has been successfully started");
     }
 
     private class PollTask implements Runnable {
@@ -37,9 +41,9 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
         @Override
         public void run() {
             try {
-                RemoteChangePackage remoteChangePackage = googleDriveService.getChanges(fileSystemRevision.getRevisionNumber());
+                RemoteChangePackage remoteChangePackage = googleDriveService.getChanges(fileSystem.getFileSystemRevision());
                 changes.addAll(remoteChangePackage.getChanges());
-                fileSystemRevision.setRevisionNumber(remoteChangePackage.getRevisionNumber());
+                fileSystem.updateFileSystemRevision(remoteChangePackage.getRevisionNumber());
                 logger.info(changes);
             } catch (IOException e) {
                 logger.error(e);

@@ -76,7 +76,7 @@ public class LocalChangesHandler {
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(trackedPath.relativize(change.getParentId()));
         String parentId = parentImageFile.getModel().getId();
         FileMetadata fileMetadata = googleDriveService.createDirectory(parentId, change.getTitle());
-        fileSystem.update(change.getId(), fileMetadata);
+        fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
     }
 
     private void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {

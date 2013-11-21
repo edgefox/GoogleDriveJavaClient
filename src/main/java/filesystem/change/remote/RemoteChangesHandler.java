@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -30,13 +31,16 @@ public class RemoteChangesHandler {
     private RemoteChangesWatcher remoteChangesWatcher;
     @Inject
     private GoogleDriveService googleDriveService;
-    
-    public void handle() {
+    private Set<Path> handledPaths = new HashSet<>();
+
+    public Set<Path> handle() {
+        handledPaths.clear();
         Set<FileSystemChange<String>> remoteChanges = remoteChangesWatcher.getChangesCopy();
         logger.info(String.format("Trying to apply remote changes: %s", remoteChanges));
         for (FileSystemChange<String> change : remoteChanges) {
             tryHandleRemoteChange(change, 3);
         }
+        return handledPaths;
     }
 
     private void tryHandleRemoteChange(FileSystemChange<String> change, int triesLeft) {
@@ -51,10 +55,10 @@ public class RemoteChangesHandler {
                         throw new IllegalStateException(String.format("Unable to handle change: %s", change));
                     }
 
-                    File directory = new File(parentPath.toFile(), change.getTitle());
+                    File directory = new File(parentPath.toAbsolutePath().toFile(), change.getTitle());
                     FileUtils.forceMkdir(directory);
                     FileMetadata fileMetadata = new FileMetadata(change.getId(), change.getTitle(), change.isDir(), null);
-                    fileSystem.update(Paths.get(directory.toURI()), fileMetadata);
+                    fileSystem.update(trackedPath.relativize(Paths.get(directory.getAbsolutePath())), fileMetadata);
                 } else {
                     downloadNewFile(change);
                 }
@@ -64,10 +68,12 @@ public class RemoteChangesHandler {
                     deleteLocalFile(imageFile, localFile);
                 }
 
-                if (!change.getParentId().equals(imageFile.getModel().getId())) {
+                if (!change.getParentId().equals(imageFile.getParent().getModel().getId())) {
                     moveLocalFile(change, imageFile, localFile);
                 } else {
-                    updateLocalFile(change, imageFile, localFile);
+                    if (!change.isDir()) {
+                        updateLocalFile(change, imageFile, localFile);
+                    }
                 }
             }
         } catch (Throwable e) {
@@ -91,12 +97,8 @@ public class RemoteChangesHandler {
         File moveTo = parentPath.toFile();
         FileUtils.copyFileToDirectory(localFile, moveTo);
         localFile.delete();
-        fileSystem.delete(imageFile);
-        fileSystem.get(parentPath).addChild(imageFile);
-    }
-
-    private Path convertRemoteIdToLocal(String id) {
-        return fileSystem.getPath(fileSystem.get(id));
+        fileSystem.move(imageFile, fileSystem.get(change.getParentId()));
+        handledPaths.add(Paths.get(localFile.toURI()));
     }
 
     private void updateLocalFile(FileSystemChange<String> change,
@@ -104,11 +106,13 @@ public class RemoteChangesHandler {
                                  File localFile) throws InterruptedException, IOException {
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         imageFile.setModel(fileMetadata);
+        handledPaths.add(Paths.get(localFile.toURI()));
     }
 
     private void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) {
         localFile.delete();
         fileSystem.delete(imageFile);
+        handledPaths.add(Paths.get(localFile.toURI()));
     }
 
     private void downloadNewFile(FileSystemChange<String> change) throws InterruptedException, IOException {
@@ -121,6 +125,12 @@ public class RemoteChangesHandler {
         File parentFile = fileSystem.getPath(parent).toFile();
         File localFile = new File(parentFile, change.getTitle());
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
-        fileSystem.update(Paths.get(localFile.toURI()), fileMetadata);
+        Path newFilePath = Paths.get(localFile.toURI());
+        fileSystem.update(trackedPath.relativize(newFilePath), fileMetadata);
+        handledPaths.add(newFilePath);        
+    }
+
+    private Path convertRemoteIdToLocal(String id) {
+        return trackedPath.relativize(fileSystem.getPath(fileSystem.get(id)));
     }
 }

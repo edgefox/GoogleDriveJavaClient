@@ -19,7 +19,7 @@ import com.google.api.services.drive.model.*;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import filesystem.FileMetadata;
-import filesystem.FileSystemRevision;
+import filesystem.FileSystem;
 import filesystem.change.FileSystemChange;
 import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
@@ -82,7 +82,7 @@ public class GoogleDriveService {
     private static long TIMEOUT_STEP = 5;
     
     @Inject
-    private FileSystemRevision revision;
+    private volatile FileSystem fileSystem;
 
     @Inject
     public GoogleDriveService(@Named("REDIRECT_URI") String REDIRECT_URI,
@@ -273,7 +273,7 @@ public class GoogleDriveService {
     public void auth() throws Exception {
         GoogleAuthorizationCodeRequestUrl authUrl = authFlow.newAuthorizationUrl();
         authUrl.setRedirectUri(REDIRECT_URI);
-        logger.info(authUrl.build());
+        logger.info(String.format("Please follow the url to authorize the application: '%s'", authUrl.build()));
         handleRedirect();
         init();
     }
@@ -338,6 +338,6 @@ public class GoogleDriveService {
     private void updateRevision() throws IOException {
         Drive.About.Get aboutRequest = apiClient.about().get();
         About about = (About) safeExecute(aboutRequest);
-        revision.setRevisionNumber(about.getLargestChangeId());
+        fileSystem.updateFileSystemRevision(about.getLargestChangeId());
     }
 }

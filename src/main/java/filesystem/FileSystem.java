@@ -20,14 +20,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class FileSystem implements Serializable {
     private static final Logger logger = Logger.getLogger(FileSystem.class);
-    private transient final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private static final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Trie<String, FileMetadata> trie;
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
-    private volatile FileSystemRevision fileSystemRevision;
+    private volatile Long fileSystemRevision = 0L;
     private transient Path basePath;
 
-    FileSystem(FileSystemRevision fileSystemRevision, Path basePath) {
-        this.fileSystemRevision = fileSystemRevision;
+    FileSystem(Path basePath) {
         this.basePath = basePath;
         trie = new Trie<>();
         trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID, 
@@ -36,12 +35,13 @@ public class FileSystem implements Serializable {
                                        null));
     }
 
-    public FileSystemRevision getFileSystemRevision() {
+    public long getFileSystemRevision() {
         return fileSystemRevision;
     }
 
-    public void setFileSystemRevision(FileSystemRevision fileSystemRevision) {
+    public void updateFileSystemRevision(long fileSystemRevision) throws IOException {
         this.fileSystemRevision = fileSystemRevision;
+        persistFileSystem();
     }
 
     public void setBasePath(Path basePath) {
@@ -66,14 +66,20 @@ public class FileSystem implements Serializable {
                     current = current.addChild(child);
                 }
             }
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("data.db"))) {
-                objectOutputStream.writeObject(this);
-            }
+            persistFileSystem();
         } catch (IOException e) {
             logger.error("Failed to save fileSystem", e);
         } finally {
             logger.info(String.format("FileSystem has been updated with: %s", path));
             lock.writeLock().unlock();
+        }
+    }
+
+    private void persistFileSystem() throws IOException {
+        File database = new File("data.db");
+        database.delete();
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(database))) {
+            objectOutputStream.writeObject(this);
         }
     }
 
@@ -95,6 +101,16 @@ public class FileSystem implements Serializable {
         try {
             trie.detachFromParent();
             idToTrie.remove(trie.getModel().getId());
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    public void move(Trie<String, FileMetadata> source, Trie<String, FileMetadata> dest) {
+        lock.writeLock().lock();
+        try {
+            source.detachFromParent();
+            dest.addChild(source);
         } finally {
             lock.writeLock().unlock();
         }

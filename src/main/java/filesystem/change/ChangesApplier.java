@@ -1,10 +1,13 @@
 package filesystem.change;
 
 import filesystem.change.local.LocalChangesHandler;
+import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesHandler;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -20,11 +23,14 @@ public class ChangesApplier {
     @Inject
     private RemoteChangesHandler remoteChangesHandler;
     @Inject
+    private LocalChangesWatcher localChangesWatcher;
+    @Inject
     private ScheduledExecutorService executorService;
 
     public void start() {
+        logger.info("Trying to start ChangesApplier");
         executorService.scheduleWithFixedDelay(new MergeTask(), 0, 15, TimeUnit.SECONDS);
-        logger.info("changes applier has been successfully started");
+        logger.info("ChangesApplier has been successfully started");
     }
 
     class MergeTask implements Runnable {
@@ -33,12 +39,9 @@ public class ChangesApplier {
         public void run() {
             logger.info("Change merge iteration started");
             localChangesHandler.handle();
-            remoteChangesHandler.handle();
+            Set<Path> handledEntries = remoteChangesHandler.handle();
+            localChangesWatcher.ignoreChanges(handledEntries);
             logger.info("Change merge iteration ended");
         }
-
-
-
-
     }
 }

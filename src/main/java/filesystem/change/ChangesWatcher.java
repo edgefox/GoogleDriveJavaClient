@@ -2,8 +2,6 @@ package filesystem.change;
 
 import javax.inject.Inject;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 

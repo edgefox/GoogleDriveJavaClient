@@ -1,11 +1,14 @@
 package service;
 
 import com.google.inject.Singleton;
-import filesystem.*;
+import com.google.inject.name.Named;
+import filesystem.FileMetadata;
+import filesystem.FileSystem;
 import filesystem.change.ChangesApplier;
 import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesWatcher;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -33,9 +36,16 @@ public class FileSystemManager {
     private RemoteChangesWatcher remoteChangesWatcher;
     @Inject
     private ChangesApplier changesApplier;
+    @Inject
+    @Named("REFRESH_TOKEN")
+    private String refreshToken;
 
     public void start() throws Exception {
-        if (fileSystem.getFileSystemRevision().getRevisionNumber() == 0) {
+        if (StringUtils.isEmpty(refreshToken)) {
+            googleDriveService.auth();
+        }
+        
+        if (fileSystem.getFileSystemRevision() == 0) {
             reflectRemoteStorage(GoogleDriveService.ROOT_DIR_ID, trackedPath.toString());
         }
         localChangesWatcher.start();

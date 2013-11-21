@@ -2,8 +2,6 @@ import com.google.inject.*;
 import com.google.inject.name.Names;
 import filesystem.FileSystem;
 import filesystem.FileSystemProvider;
-import filesystem.FileSystemRevision;
-import filesystem.FileSystemRevisionProvider;
 import org.apache.log4j.Logger;
 import service.FileSystemManager;
 
@@ -37,7 +35,6 @@ public class Main extends AbstractModule {
         loadProperties(binder());
         bind(Path.class).toInstance(DEFAULT_PATH);
         bind(FileSystem.class).toProvider(new FileSystemProvider());
-        bind(FileSystemRevision.class).toProvider(new FileSystemRevisionProvider());
         bind(ScheduledExecutorService.class).toInstance(Executors.newSingleThreadScheduledExecutor());
     }
 
