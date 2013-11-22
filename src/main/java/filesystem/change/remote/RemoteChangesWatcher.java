@@ -44,7 +44,6 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
                 RemoteChangePackage remoteChangePackage = googleDriveService.getChanges(fileSystem.getFileSystemRevision());
                 changes.addAll(remoteChangePackage.getChanges());
                 fileSystem.updateFileSystemRevision(remoteChangePackage.getRevisionNumber());
-                logger.info(changes);
             } catch (IOException e) {
                 logger.error(e);
             }

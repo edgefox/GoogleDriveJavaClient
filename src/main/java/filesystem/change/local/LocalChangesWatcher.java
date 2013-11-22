@@ -105,7 +105,6 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                                                    kind == ENTRY_DELETE ? null : child.getParent(),
                                                    child.getFileName().toString(),
                                                    child.toFile().isDirectory()));
-                logger.info(String.format("%s: %s\n", lastEvent.kind().name(), child));
 
                 if (kind == ENTRY_CREATE) {
                     try {
