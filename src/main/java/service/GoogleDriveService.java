@@ -274,15 +274,14 @@ public class GoogleDriveService {
         return parentReference.getIsRoot() ? "root" : parentReference.getId();
     }
 
-    public void auth() throws Exception {
+    public String auth() throws Exception {
         GoogleAuthorizationCodeRequestUrl authUrl = authFlow.newAuthorizationUrl();
         authUrl.setRedirectUri(REDIRECT_URI);
-        logger.info(String.format("Please follow the url to authorize the application: '%s'", authUrl.build()));
-        handleRedirect();
-        init();
+        
+        return authUrl.build();
     }
 
-    synchronized void handleRedirect() throws Exception {
+    public synchronized String handleRedirect() throws Exception {
         Server server = new Server(9999);
         ServletContextHandler handler = new ServletContextHandler();
         handler.addServlet(new ServletHolder(new HttpServlet() {
@@ -306,6 +305,10 @@ public class GoogleDriveService {
         server.start();
         wait();
         server.stop();
+        
+        init();
+        
+        return REFRESH_TOKEN;
     }
 
     @SuppressWarnings("checked")

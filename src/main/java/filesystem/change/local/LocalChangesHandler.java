@@ -1,5 +1,6 @@
 package filesystem.change.local;
 
+import com.google.inject.Singleton;
 import filesystem.FileMetadata;
 import filesystem.FileSystem;
 import filesystem.Trie;
@@ -18,6 +19,7 @@ import java.util.Set;
  * Date: 11/21/13
  * Time: 2:28 PM
  */
+@Singleton
 public class LocalChangesHandler {
     private static final Logger logger = Logger.getLogger(LocalChangesHandler.class);
     @Inject
@@ -79,7 +81,7 @@ public class LocalChangesHandler {
     private void createDirectory(FileSystemChange<Path> change) throws IOException {
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(trackedPath.relativize(change.getParentId()));
         String parentId = parentImageFile.getModel().getId();
-        FileMetadata fileMetadata = googleDriveService.createDirectory(parentId, change.getTitle());
+        FileMetadata fileMetadata = googleDriveService.createOrGetDirectory(parentId, change.getTitle());
         fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
         handledIds.add(fileMetadata.getId());
     }

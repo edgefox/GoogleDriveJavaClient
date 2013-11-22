@@ -3,7 +3,6 @@ import com.google.inject.name.Names;
 import filesystem.FileSystem;
 import filesystem.FileSystemProvider;
 import org.apache.log4j.Logger;
-import service.FileSystemManager;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -13,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: Ivan Lyutov
@@ -22,31 +23,47 @@ import java.util.concurrent.ScheduledExecutorService;
 @Singleton
 public class Main extends AbstractModule {
     private static final Logger logger = Logger.getLogger(Main.class);
-    private static final Path DEFAULT_PATH = Paths.get("/home/ilyutov/GoogleDrive");
+    private final String configLocation;
     @Inject
     private FileSystemManager fileSystemManager;
+    private ScheduledExecutorService applicationThreadPool = initApplicationThreadPool();
+    private ConfigurationManager configManager;
 
-    public void start() throws Exception {
-        fileSystemManager.start();
+    public Main() {
+        String customConfigLocation = System.getProperty("config.location");
+        configLocation = customConfigLocation == null ? "application.properties" : customConfigLocation;
     }
 
     @Override
     protected void configure() {
+        try {
+            if (configLocation == null) {
+                configManager = new ConfigurationManager();
+            } else {
+                configManager = new ConfigurationManager(configLocation);
+            }
+            bind(ConfigurationManager.class).toInstance(configManager);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        bind(Path.class).toProvider(new TrackedPathProvider());
         loadProperties(binder());
-        bind(Path.class).toInstance(DEFAULT_PATH);
         bind(FileSystem.class).toProvider(new FileSystemProvider());
-        bind(ScheduledExecutorService.class).toInstance(Executors.newSingleThreadScheduledExecutor());
+        bind(ScheduledExecutorService.class).toInstance(applicationThreadPool);
+    }
+
+    private ScheduledExecutorService initApplicationThreadPool() {
+        return Executors.newScheduledThreadPool(3, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r.getClass().getName());
+            }
+        });
     }
 
     private void loadProperties(Binder binder) {
-        InputStream stream = Main.class.getResourceAsStream("application.properties");
-        Properties appProperties = new Properties();
-        try {
-            appProperties.load(stream);
-            Names.bindProperties(binder, appProperties);
-        } catch (IOException e) {
-            binder.addError(e);
-        }
+        Properties appProperties = configManager.getAppProperties();
+        Names.bindProperties(binder, appProperties);
     }
 
     public static void main(String[] args) {
@@ -54,7 +71,8 @@ public class Main extends AbstractModule {
             Main main = new Main();
             Injector injector = Guice.createInjector(main);
             injector.injectMembers(main);
-            main.start();
+            System.out.println("Application is up and active.");
+            main.applicationThreadPool.awaitTermination(365, TimeUnit.DAYS);
         } catch (IllegalStateException e) {
             logger.error("Failed to init filesystem", e);
         } catch (Exception e) {

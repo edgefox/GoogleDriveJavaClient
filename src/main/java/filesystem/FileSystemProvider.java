@@ -22,7 +22,7 @@ import java.util.Arrays;
  */
 public class FileSystemProvider implements Provider<FileSystem> {
     @Inject
-    private Path basePath;
+    private Path trackedPath;
     private static FileSystem fileSystem = null;
 
     public filesystem.FileSystem get() {
@@ -40,27 +40,27 @@ public class FileSystemProvider implements Provider<FileSystem> {
     private void readFileSystem() {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("data.db"))) {
             fileSystem = (FileSystem) in.readObject();
-            fileSystem.setBasePath(basePath);
+            fileSystem.setBasePath(trackedPath);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void createNewFileSystem() {
-        fileSystem = new FileSystem(basePath);
+        fileSystem = new FileSystem(trackedPath);
         try {
-            Files.walkFileTree(basePath, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(trackedPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (basePath.equals(dir)) return FileVisitResult.CONTINUE;
+                    if (trackedPath.equals(dir)) return FileVisitResult.CONTINUE;
 
-                    fileSystem.update(basePath.relativize(dir), getPathMetadata(dir, attrs));
+                    fileSystem.update(trackedPath.relativize(dir), getPathMetadata(dir, attrs));
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    fileSystem.update(basePath.relativize(file), getPathMetadata(file, attrs));
+                    fileSystem.update(trackedPath.relativize(file), getPathMetadata(file, attrs));
                     return FileVisitResult.CONTINUE;
                 }
 

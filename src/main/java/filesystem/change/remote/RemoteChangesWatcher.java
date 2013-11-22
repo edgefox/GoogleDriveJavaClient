@@ -3,18 +3,12 @@ package filesystem.change.remote;
 import com.google.inject.Singleton;
 import filesystem.FileSystem;
 import filesystem.change.ChangesWatcher;
-import filesystem.change.FileSystemChange;
 import filesystem.change.RemoteChangePackage;
 import org.apache.log4j.Logger;
 import service.GoogleDriveService;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,7 +23,6 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
     private GoogleDriveService googleDriveService;
     @Inject
     private volatile FileSystem fileSystem;
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public void start() throws IOException {
         logger.info("Trying to start RemoteChangesWatcher");
@@ -49,15 +42,7 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
         public void run() {
             try {
                 RemoteChangePackage remoteChangePackage = googleDriveService.getChanges(fileSystem.getFileSystemRevision());
-                List<FileSystemChange<String>> changesToHandle = remoteChangePackage.getChanges();
-                Set<FileSystemChange<String>> changesToIgnore = new HashSet<>();
-                for (FileSystemChange<String> change : changesToHandle) {
-                    if (handledEntries.remove(change.getId())) {
-                        changesToIgnore.add(change);
-                    }
-                }
-                changesToHandle.removeAll(changesToIgnore);
-                changes.addAll(changesToHandle);
+                changes.addAll(remoteChangePackage.getChanges());
                 fileSystem.updateFileSystemRevision(remoteChangePackage.getRevisionNumber());
                 logger.info(changes);
             } catch (IOException e) {

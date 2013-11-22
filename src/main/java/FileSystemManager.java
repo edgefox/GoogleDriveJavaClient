@@ -1,7 +1,4 @@
-package service;
-
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import filesystem.FileMetadata;
 import filesystem.FileSystem;
 import filesystem.change.ChangesApplier;
@@ -9,6 +6,7 @@ import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesWatcher;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import service.GoogleDriveService;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -37,20 +35,28 @@ public class FileSystemManager {
     @Inject
     private ChangesApplier changesApplier;
     @Inject
-    @Named("REFRESH_TOKEN")
-    private String refreshToken;
+    private ConfigurationManager configurationManager;
 
+    @Inject
     public void start() throws Exception {
-        if (StringUtils.isEmpty(refreshToken)) {
-            googleDriveService.auth();
-        }
-        
+        prepareGoogleDriveAuth();
+
         if (fileSystem.getFileSystemRevision() == 0) {
             reflectRemoteStorage(GoogleDriveService.ROOT_DIR_ID, trackedPath.toString());
         }
         localChangesWatcher.start();
         remoteChangesWatcher.start();
         changesApplier.start();
+    }
+
+    private void prepareGoogleDriveAuth() throws Exception {
+        if (StringUtils.isEmpty(configurationManager.getProperty("REFRESH_TOKEN"))) {
+            String authUrl = googleDriveService.auth();
+            System.out.println(String.format("Please follow the url to authorize the application: '%s'", authUrl));
+            String newRefreshToken = googleDriveService.handleRedirect();
+            configurationManager.updateProperties("REFRESH_TOKEN", newRefreshToken);
+            System.out.println("Authorization succeeded. Starting application...");
+        }
     }
 
     private void reflectRemoteStorage(String id, String path) throws IOException, InterruptedException {

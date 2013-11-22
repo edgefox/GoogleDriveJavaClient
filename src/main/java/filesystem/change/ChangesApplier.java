@@ -1,5 +1,6 @@
 package filesystem.change;
 
+import com.google.inject.Singleton;
 import filesystem.change.local.LocalChangesHandler;
 import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesHandler;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 10/15/13
  * Time: 5:33 PM
  */
+@Singleton
 public class ChangesApplier {
     private static final Logger logger = Logger.getLogger(ChangesApplier.class);
     @Inject
