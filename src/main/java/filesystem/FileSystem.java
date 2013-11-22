@@ -40,8 +40,13 @@ public class FileSystem implements Serializable {
     }
 
     public void updateFileSystemRevision(long fileSystemRevision) throws IOException {
-        this.fileSystemRevision = fileSystemRevision;
-        persistFileSystem();
+        lock.writeLock().lock();
+        try {
+            this.fileSystemRevision = fileSystemRevision;
+            persistFileSystem();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public void setBasePath(Path basePath) {

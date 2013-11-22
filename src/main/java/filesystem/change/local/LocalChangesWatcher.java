@@ -74,8 +74,9 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
             while (!Thread.currentThread().isInterrupted()) {
                 WatchKey key;
                 try {
-                    key = watchService.take();
+                    key = watchService.poll(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
+                    logger.info("LocalChangesWatcher has been interrupted");
                     return;
                 }
 
@@ -95,6 +96,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                 try {
                     if ((kind == ENTRY_MODIFY && Files.isDirectory(child)) ||
                         Files.isHidden(child)) {
+                        resetKey(key);
                         continue;
                     }
                 } catch (IOException e) {
@@ -139,12 +141,16 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     }
                 }
 
-                boolean valid = key.reset();
-                if (!valid) {
-                    watchKeyToPath.remove(key);
-                    if (watchKeyToPath.isEmpty()) {
-                        break;
-                    }
+                resetKey(key);
+            }
+        }
+
+        private void resetKey(WatchKey key) {
+            boolean valid = key.reset();
+            if (!valid) {
+                watchKeyToPath.remove(key);
+                if (watchKeyToPath.isEmpty()) {
+                    logger.info("LocalChangesWatcher has been stopped");
                 }
             }
         }
