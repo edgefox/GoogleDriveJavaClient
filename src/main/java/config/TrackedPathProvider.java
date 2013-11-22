@@ -1,3 +1,5 @@
+package config;
+
 import com.google.inject.Provider;
 import org.apache.commons.lang3.StringUtils;
 

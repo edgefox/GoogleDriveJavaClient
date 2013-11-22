@@ -1,14 +1,14 @@
 import com.google.inject.*;
 import com.google.inject.name.Names;
+import config.ConfigurationManager;
+import config.TrackedPathProvider;
 import filesystem.FileSystem;
 import filesystem.FileSystemProvider;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,12 +53,7 @@ public class Main extends AbstractModule {
     }
 
     private ScheduledExecutorService initApplicationThreadPool() {
-        return Executors.newScheduledThreadPool(3, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r.getClass().getName());
-            }
-        });
+        return Executors.newScheduledThreadPool(3);
     }
 
     private void loadProperties(Binder binder) {

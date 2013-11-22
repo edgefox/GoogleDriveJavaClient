@@ -1,4 +1,5 @@
 import com.google.inject.Singleton;
+import config.ConfigurationManager;
 import filesystem.FileMetadata;
 import filesystem.FileSystem;
 import filesystem.change.ChangesApplier;

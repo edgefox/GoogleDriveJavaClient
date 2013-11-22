@@ -1,7 +1,8 @@
+package config;
+
 import com.google.inject.Singleton;
 
 import java.io.*;
-import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
 
@@ -49,7 +50,7 @@ public class ConfigurationManager {
         }
     }
 
-    Properties getAppProperties() {
+    public Properties getAppProperties() {
         return appProperties;
     }
 }
