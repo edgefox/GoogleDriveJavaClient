@@ -1,9 +1,14 @@
 package config;
 
 import com.google.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.*;
-import java.net.URL;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
@@ -17,35 +22,33 @@ public class ConfigurationManager {
     private String configPath;
     private Properties appProperties;
 
-    public ConfigurationManager() throws IOException {
-        this.configPath = DEFAULT_CONFIG_PATH;
-        try (InputStream stream = ConfigurationManager.class.getResourceAsStream(configPath)) {
-            appProperties = new Properties();
-            appProperties.load(stream);
-        }
-    }
-
     public ConfigurationManager(String configPath) throws IOException {
-        this.configPath = configPath;
+        init(configPath);
         try (InputStream stream = new FileInputStream(configPath)) {
             appProperties = new Properties();
             appProperties.load(stream);
         }
     }
-    
+
+    private void init(String configPath) throws IOException {
+        if (StringUtils.isEmpty(configPath)) {
+            this.configPath = DEFAULT_CONFIG_PATH;
+            if (!Files.exists(Paths.get(DEFAULT_CONFIG_PATH))) {
+                InputStream in = ConfigurationManager.class.getResourceAsStream(DEFAULT_CONFIG_PATH);
+                Files.copy(in, Paths.get(DEFAULT_CONFIG_PATH));
+            }
+        } else {
+            this.configPath = configPath;
+        }
+    }
+
     public String getProperty(String key) {
         return appProperties.getProperty(key);
     }
     
     public void updateProperties(String key, String value) throws IOException {
         appProperties.setProperty(key, value);
-        URL resource;
-        if (configPath.equals(DEFAULT_CONFIG_PATH)) {
-            resource = ConfigurationManager.class.getResource(configPath);
-        } else {
-            resource = new File(configPath).toURL();
-        }
-        try (FileOutputStream out = new FileOutputStream(resource.getFile())) {
+        try (FileOutputStream out = new FileOutputStream(configPath)) {
             appProperties.store(out, null);
         }
     }

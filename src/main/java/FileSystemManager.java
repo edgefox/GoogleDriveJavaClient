@@ -45,8 +45,8 @@ public class FileSystemManager {
         if (fileSystem.getFileSystemRevision() == 0) {
             reflectRemoteStorage(GoogleDriveService.ROOT_DIR_ID, trackedPath.toString());
         }
-        localChangesWatcher.start();
         remoteChangesWatcher.start();
+        localChangesWatcher.start();
         changesApplier.start();
     }
 
