@@ -47,6 +47,7 @@ public class FileSystemChange<T> {
 
         if (dir != that.dir) return false;
         if (!id.equals(that.id)) return false;
+        if (parentId != null ? !parentId.equals(that.parentId) : that.parentId != null) return false;
 
         return true;
     }
@@ -54,6 +55,7 @@ public class FileSystemChange<T> {
     @Override
     public int hashCode() {
         int result = id.hashCode();
+        result = 31 * result + (parentId != null ? parentId.hashCode() : 0);
         result = 31 * result + (dir ? 1 : 0);
         return result;
     }
