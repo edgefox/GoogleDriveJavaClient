@@ -24,7 +24,7 @@ public class ConfigurationManager {
 
     public ConfigurationManager(String configPath) throws IOException {
         init(configPath);
-        try (InputStream stream = new FileInputStream(configPath)) {
+        try (InputStream stream = new FileInputStream(this.configPath)) {
             appProperties = new Properties();
             appProperties.load(stream);
         }
@@ -34,7 +34,7 @@ public class ConfigurationManager {
         if (StringUtils.isEmpty(configPath)) {
             this.configPath = DEFAULT_CONFIG_PATH;
             if (!Files.exists(Paths.get(DEFAULT_CONFIG_PATH))) {
-                InputStream in = ConfigurationManager.class.getResourceAsStream(DEFAULT_CONFIG_PATH);
+                InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(DEFAULT_CONFIG_PATH);
                 Files.copy(in, Paths.get(DEFAULT_CONFIG_PATH));
             }
         } else {
