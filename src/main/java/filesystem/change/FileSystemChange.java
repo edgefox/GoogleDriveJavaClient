@@ -39,6 +39,26 @@ public class FileSystemChange<T> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FileSystemChange)) return false;
+
+        FileSystemChange that = (FileSystemChange) o;
+
+        if (dir != that.dir) return false;
+        if (!id.equals(that.id)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + (dir ? 1 : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("FileSystemChange{");
         sb.append("id='").append(id).append('\'');
