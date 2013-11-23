@@ -123,6 +123,7 @@ public class GoogleDriveService {
         FileMetadata child = findChild(folderId, localFile.getName());
         if (child != null) {
             File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file, mediaContent));
+            logger.info(String.format("File has been successfully uploaded: '%s'", localFile));
             return new FileMetadata(updatedFile);
         }
 
