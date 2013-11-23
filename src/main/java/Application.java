@@ -22,7 +22,7 @@ import java.util.List;
  * Time: 6:44 PM
  */
 @Singleton
-public class FileSystemManager {
+public class Application {
     @Inject
     private Path trackedPath;
     @Inject    

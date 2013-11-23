@@ -41,7 +41,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     @Inject
     private Path trackedPath;
     @Inject
-    private filesystem.FileSystem fileSystem;
+    private volatile filesystem.FileSystem fileSystem;
 
     public void start() throws IOException {
         logger.info("Trying to start LocalChangesWatcher");

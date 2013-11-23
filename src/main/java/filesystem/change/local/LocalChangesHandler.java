@@ -5,6 +5,7 @@ import filesystem.FileMetadata;
 import filesystem.FileSystem;
 import filesystem.Trie;
 import filesystem.change.FileSystemChange;
+import filesystem.change.remote.RemoteChangesWatcher;
 import org.apache.log4j.Logger;
 import service.GoogleDriveService;
 
@@ -27,21 +28,23 @@ public class LocalChangesHandler {
     @Inject
     private volatile FileSystem fileSystem;
     @Inject
-    private LocalChangesWatcher localChangesWatcher;
+    private volatile LocalChangesWatcher localChangesWatcher;
+    @Inject
+    private volatile RemoteChangesWatcher remoteChangesWatcher; 
     @Inject
     private GoogleDriveService googleDriveService;
     private Set<String> handledIds = new HashSet<>();
 
-    public Set<String> handle() {
+    public void handle() {
         handledIds.clear();
         Set<FileSystemChange<Path>> localChanges = localChangesWatcher.getChangesCopy();
         logger.info(String.format("Trying to apply local changes: %s", localChanges));
         for (FileSystemChange<Path> change : localChanges) {
             tryHandleLocalChange(change, 3);
         }
-        logger.info(String.format("Local changes have been handled: %s", localChanges));
+        logger.info(String.format("Local changes have been applied: %s", localChanges));
 
-        return handledIds;
+        remoteChangesWatcher.ignoreChanges(handledIds);
     }
 
     private void tryHandleLocalChange(FileSystemChange<Path> change, int triesLeft) {

@@ -10,13 +10,10 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: Ivan Lyutov
@@ -28,7 +25,7 @@ public class Main extends AbstractModule {
     private static final Logger logger = Logger.getLogger(Main.class);
     
     @Inject
-    private FileSystemManager fileSystemManager;
+    private Application fileSystemManager;
     private ScheduledExecutorService applicationThreadPool = initApplicationThreadPool();
     private ConfigurationManager configManager;
 

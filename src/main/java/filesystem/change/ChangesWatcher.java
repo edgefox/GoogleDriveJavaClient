@@ -1,6 +1,7 @@
 package filesystem.change;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -12,10 +13,15 @@ import java.util.concurrent.ScheduledExecutorService;
  * Time: 2:21 PM
  */
 public abstract class ChangesWatcher<T> {
-    protected final Set<FileSystemChange<T>> changes = new LinkedHashSet<>();
-    protected Set<T> handledEntries = new HashSet<>();
+    protected final Set<FileSystemChange<T>> changes;
+    protected final Set<T> handledEntries;
     @Inject
     protected ScheduledExecutorService executorService;
+
+    public ChangesWatcher() {
+        changes = Collections.synchronizedSet(new LinkedHashSet<FileSystemChange<T>>());
+        handledEntries = new HashSet<>();
+    }
 
     public abstract void start() throws Exception;
 

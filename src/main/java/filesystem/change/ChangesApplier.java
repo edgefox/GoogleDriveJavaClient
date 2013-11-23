@@ -26,10 +26,6 @@ public class ChangesApplier {
     @Inject
     private RemoteChangesHandler remoteChangesHandler;
     @Inject
-    private LocalChangesWatcher localChangesWatcher;
-    @Inject
-    private RemoteChangesWatcher remoteChangesWatcher;
-    @Inject
     private ScheduledExecutorService executorService;
 
     public void start() {
@@ -43,8 +39,8 @@ public class ChangesApplier {
         @Override
         public void run() {
             logger.info("Change merge iteration started");
-            remoteChangesWatcher.ignoreChanges(localChangesHandler.handle());
-            localChangesWatcher.ignoreChanges(remoteChangesHandler.handle());
+            localChangesHandler.handle();
+            remoteChangesHandler.handle();
             logger.info("Change merge iteration ended");
         }
     }
