@@ -122,7 +122,7 @@ public class GoogleDriveService {
 
         FileMetadata child = findChild(folderId, localFile.getName());
         if (child != null) {
-            File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file));
+            File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file, mediaContent));
             return new FileMetadata(updatedFile);
         }
 
