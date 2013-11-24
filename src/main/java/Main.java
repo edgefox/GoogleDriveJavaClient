@@ -22,25 +22,28 @@ import java.util.concurrent.ThreadFactory;
  */
 @Singleton
 public class Main extends AbstractModule {
-    private static final Logger logger = Logger.getLogger(Main.class);
-    
+    private static final Logger logger = Logger.getLogger(Main.class);    
     @Inject
-    private Application fileSystemManager;
-    private ScheduledExecutorService applicationThreadPool = initApplicationThreadPool();
-    private ConfigurationManager configManager;
+    private Application application;
 
     @Override
     protected void configure() {
+        ConfigurationManager configManager = initConfigurationManager();
+        bind(ConfigurationManager.class).toInstance(configManager);
+        bind(Path.class).toProvider(new TrackedPathProvider());
+        loadProperties(binder(), configManager);
+        bind(FileSystem.class).toProvider(new FileSystemProvider());
+        bind(ScheduledExecutorService.class).toInstance(initApplicationThreadPool());
+    }
+
+    private ConfigurationManager initConfigurationManager() {
+        ConfigurationManager configManager;
         try {
             configManager = new ConfigurationManager(System.getProperty("config.location"));
-            bind(ConfigurationManager.class).toInstance(configManager);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        bind(Path.class).toProvider(new TrackedPathProvider());
-        loadProperties(binder());
-        bind(FileSystem.class).toProvider(new FileSystemProvider());
-        bind(ScheduledExecutorService.class).toInstance(applicationThreadPool);
+        return configManager;
     }
 
     private ScheduledExecutorService initApplicationThreadPool() {        
@@ -50,7 +53,7 @@ public class Main extends AbstractModule {
         return Executors.newScheduledThreadPool(3, threadFactory);
     }
 
-    private void loadProperties(Binder binder) {
+    private void loadProperties(Binder binder, ConfigurationManager configManager) {
         Properties appProperties = configManager.getAppProperties();
         Names.bindProperties(binder, appProperties);
     }
@@ -61,10 +64,8 @@ public class Main extends AbstractModule {
             Injector injector = Guice.createInjector(main);
             injector.injectMembers(main);
             System.out.println("Application is up and active.");
-        } catch (IllegalStateException e) {
-            logger.error("Failed to init filesystem", e);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 }
