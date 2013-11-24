@@ -97,7 +97,8 @@ public class RemoteChangesHandler {
     }
 
     private boolean isMoved(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) {
-        return !change.getParentId().equals(imageFile.getParent().getModel().getId());
+        return !change.getTitle().equals(imageFile.getKey()) || 
+               !change.getParentId().equals(imageFile.getParent().getModel().getId());
     }
 
     private void createDirectory(FileSystemChange<String> change) throws IOException {
@@ -122,6 +123,9 @@ public class RemoteChangesHandler {
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
         Path destination = fileSystem.getPath(parentImageFile).resolve(change.getTitle());        
         Files.move(source, destination);
+        if (!imageFile.getKey().equals(change.getTitle())) {
+            imageFile.setKey(change.getTitle());
+        }
         fileSystem.move(imageFile, parentImageFile);
         handledPaths.add(destination);
     }
