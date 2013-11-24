@@ -52,18 +52,11 @@ public class LocalChangesHandler {
         try {
             logger.info(String.format("Trying to apply change: %s", change));
             Trie<String, FileMetadata> imageFile = fileSystem.get(trackedPath.relativize(change.getId()));
-            if (change.isDir()) {
-                createDirectory(change);
-            }
-            if (imageFile == null && !change.isRemoved()) {
-                uploadLocalFile(change);
-            } else if (imageFile != null) {
-                if (change.isRemoved()) {
-                    deleteRemoteFile(imageFile);
-                } else {
-                    uploadLocalFile(change);
-                }
-                //TODO: implement move event handling for local changes
+            boolean isNewEntry = imageFile == null;
+            if (isNewEntry) {
+                handleNewEntry(change);
+            } else {
+                handleExistingEntry(change, imageFile);
             }
         } catch (Exception e) {
             logger.warn(String.format("Failed to apply change: %s", change), e);
@@ -78,6 +71,24 @@ public class LocalChangesHandler {
                 logger.info(String.format("Сhange has been successfully applied: %s", change));
                 localChangesWatcher.changeHandled(change);
             }
+        }
+    }
+
+    private void handleNewEntry(FileSystemChange<Path> change) throws IOException {
+        if (!change.isRemoved()) {
+            if (change.isDir()) {
+                createDirectory(change);
+            } else {
+                uploadLocalFile(change);
+            }
+        }
+    }
+
+    private void handleExistingEntry(FileSystemChange<Path> change, Trie<String, FileMetadata> imageFile) throws IOException {
+        if (change.isRemoved()) {
+            deleteRemoteFile(imageFile);
+        } else {
+            uploadLocalFile(change);
         }
     }
 
