@@ -13,6 +13,7 @@ import service.GoogleDriveService;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -52,25 +53,11 @@ public class RemoteChangesHandler {
         boolean success = true;
         try {
             Trie<String, FileMetadata> imageFile = fileSystem.get(change.getId());
-            if (imageFile == null && !change.isRemoved()) {
-                if (change.isDir()) {
-                    createDirectory(change);
-                } else {
-                    downloadNewFile(change);
-                }
-            } else if (imageFile != null) {
-                File localFile = fileSystem.getPath(imageFile).toFile();
-                if (change.isRemoved()) {
-                    deleteLocalFile(imageFile, localFile);
-                }
-
-                if (!change.getParentId().equals(imageFile.getParent().getModel().getId())) {
-                    moveLocalFile(change, imageFile, localFile);
-                } else {
-                    if (!change.isDir()) {
-                        updateLocalFile(change, imageFile, localFile);
-                    }
-                }
+            boolean isNewEntry = imageFile == null;
+            if (isNewEntry) {
+                handleNewEntry(change);
+            } else {
+                handleExistingEntry(change, imageFile);
             }
         } catch (Throwable e) {
             logger.warn(String.format("Failed to apply change: %s", change), e);
@@ -86,6 +73,31 @@ public class RemoteChangesHandler {
                 remoteChangesWatcher.changeHandled(change);
             }
         }
+    }
+
+    private void handleNewEntry(FileSystemChange<String> change) throws IOException, InterruptedException {
+        if (!change.isRemoved()) {
+            if (change.isDir()) {
+                createDirectory(change);
+            } else {
+                downloadNewFile(change);
+            }
+        }
+    }
+
+    private void handleExistingEntry(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) throws IOException, InterruptedException {
+        File localFile = fileSystem.getPath(imageFile).toFile();
+        if (change.isRemoved()) {
+            deleteLocalFile(imageFile, localFile);
+        } else if (isMoved(change, imageFile)) {
+            moveLocalFile(change, imageFile);
+        } else if (!change.isDir()) {
+            updateLocalFile(change, imageFile, localFile);
+        }
+    }
+
+    private boolean isMoved(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) {
+        return !change.getParentId().equals(imageFile.getParent().getModel().getId());
     }
 
     private void createDirectory(FileSystemChange<String> change) throws IOException {
@@ -104,13 +116,14 @@ public class RemoteChangesHandler {
         handledPaths.add(newDirectoryPath);
     }
 
-    private void moveLocalFile(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile, File localFile) throws IOException {
-        Path fullParentPath = fileSystem.getPath(fileSystem.get(change.getParentId()));
-        File moveTo = fullParentPath.toFile();        
-        FileUtils.copyFileToDirectory(localFile, moveTo);
-        localFile.delete();
-        fileSystem.move(imageFile, fileSystem.get(change.getParentId()));
-        handledPaths.add(Paths.get(localFile.toURI()));
+    private void moveLocalFile(FileSystemChange<String> change, 
+                               Trie<String, FileMetadata> imageFile) throws IOException {
+        Path source = fileSystem.getPath(imageFile);
+        Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
+        Path destination = fileSystem.getPath(parentImageFile).resolve(change.getTitle());        
+        Files.move(source, destination);
+        fileSystem.move(imageFile, parentImageFile);
+        handledPaths.add(destination);
     }
 
     private void updateLocalFile(FileSystemChange<String> change,
@@ -139,7 +152,7 @@ public class RemoteChangesHandler {
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         Path newFilePath = Paths.get(localFile.toURI());
         fileSystem.update(trackedPath.relativize(newFilePath), fileMetadata);
-        handledPaths.add(newFilePath);        
+        handledPaths.add(newFilePath);
     }
 
     private Path convertRemoteIdToLocal(String id) {
