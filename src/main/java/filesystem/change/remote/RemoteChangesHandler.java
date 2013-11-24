@@ -128,6 +128,14 @@ public class RemoteChangesHandler {
         }
         fileSystem.move(imageFile, parentImageFile);
         handledPaths.add(destination);
+        if (change.isDir()) {
+            Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(change.getId());
+            for (String childId : allChildrenIds) {
+                Path path = fileSystem.getPath(fileSystem.get(childId));
+                handledPaths.add(path);
+            }
+
+        }
     }
 
     private void updateLocalFile(FileSystemChange<String> change,

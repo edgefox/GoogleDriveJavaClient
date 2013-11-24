@@ -19,7 +19,6 @@ import com.google.api.services.drive.model.*;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import filesystem.FileMetadata;
-import filesystem.FileSystem;
 import filesystem.change.FileSystemChange;
 import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
@@ -41,10 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
@@ -189,6 +185,18 @@ public class GoogleDriveService {
         Drive.Files.Get get = apiClient.files().get(childId).setFields(FILE_REQUIRED_FIELDS);
         File file = (File) safeExecute(get);
         return new FileMetadata(file);
+    }
+    
+    public Set<String> getAllChildrenIds(String folderId) throws IOException {
+        Set<String> result = new HashSet<>();
+        Drive.Children.List request = apiClient.children().list(folderId);
+        ChildList childList = (ChildList) safeExecute(request);
+        for (ChildReference childReference : childList.getItems()) {
+            result.add(childReference.getId());
+            result.addAll(getAllChildrenIds(childReference.getId()));                        
+        }
+        
+        return result;
     }
 
     public List<FileMetadata> listDirectory(String folderId) throws IOException {
