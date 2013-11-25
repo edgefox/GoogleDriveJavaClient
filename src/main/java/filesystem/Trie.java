@@ -92,7 +92,9 @@ public class Trie<K, M> implements Serializable {
     public Trie<K, M> addChild(Trie<K, M> node) {
         node.parent = this;
         Trie<K, M> replacedChild = children.put(node.getKey(), node);
-        replacedChild.detachFromParent();
+        if (replacedChild != null) {
+            replacedChild.detachFromParent();
+        }
         return node;
     }
 

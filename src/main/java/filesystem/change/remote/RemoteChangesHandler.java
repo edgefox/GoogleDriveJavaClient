@@ -86,7 +86,7 @@ public class RemoteChangesHandler {
     }
 
     private void handleExistingEntry(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) throws IOException, InterruptedException {
-        File localFile = fileSystem.getPath(imageFile).toFile();
+        File localFile = fileSystem.getFullPath(imageFile).toFile();
         if (change.isRemoved()) {
             deleteLocalFile(imageFile, localFile);
         } else if (isMoved(change, imageFile)) {
@@ -108,7 +108,7 @@ public class RemoteChangesHandler {
             throw new IllegalStateException(String.format("Unable to handle change: %s", change));
         }
 
-        Path fullParentPath = fileSystem.getPath(fileSystem.get(change.getParentId()));
+        Path fullParentPath = fileSystem.getFullPath(fileSystem.get(change.getParentId()));
         File directory = new File(fullParentPath.toFile(), change.getTitle());
         FileUtils.forceMkdir(directory);
         FileMetadata fileMetadata = new FileMetadata(change.getId(), change.getTitle(), change.isDir(), null);
@@ -119,9 +119,9 @@ public class RemoteChangesHandler {
 
     private void moveLocalFile(FileSystemChange<String> change, 
                                Trie<String, FileMetadata> imageFile) throws IOException {
-        Path source = fileSystem.getPath(imageFile);
+        Path source = fileSystem.getFullPath(imageFile);
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
-        Path destination = fileSystem.getPath(parentImageFile).resolve(change.getTitle());        
+        Path destination = fileSystem.getFullPath(parentImageFile).resolve(change.getTitle());        
         Files.move(source, destination);
         if (!imageFile.getKey().equals(change.getTitle())) {
             imageFile.setKey(change.getTitle());
@@ -131,7 +131,7 @@ public class RemoteChangesHandler {
         if (change.isDir()) {
             Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(change.getId());
             for (String childId : allChildrenIds) {
-                Path path = fileSystem.getPath(fileSystem.get(childId));
+                Path path = fileSystem.getFullPath(fileSystem.get(childId));
                 handledPaths.add(path);
             }
 
@@ -159,7 +159,7 @@ public class RemoteChangesHandler {
             throw new IllegalStateException(String.format("Unable to handle change: %s", change));
         }
 
-        File parentFile = fileSystem.getPath(parent).toFile();
+        File parentFile = fileSystem.getFullPath(parent).toFile();
         File localFile = new File(parentFile, change.getTitle());
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         Path newFilePath = Paths.get(localFile.toURI());
@@ -168,6 +168,6 @@ public class RemoteChangesHandler {
     }
 
     private Path convertRemoteIdToLocal(String id) {
-        return trackedPath.relativize(fileSystem.getPath(fileSystem.get(id)));
+        return trackedPath.relativize(fileSystem.getFullPath(fileSystem.get(id)));
     }
 }

@@ -49,6 +49,10 @@ public class FileSystem implements Serializable {
         }
     }
 
+    public Path getBasePath() {
+        return basePath;
+    }
+
     public void setBasePath(Path basePath) {
         this.basePath = basePath;
     }
@@ -154,13 +158,13 @@ public class FileSystem implements Serializable {
         }
     }
     
-    public Path getPath(Trie<String, FileMetadata> entry) {
-        return Paths.get(basePath + getFullPath(entry));
+    public Path getFullPath(Trie<String, FileMetadata> entry) {
+        return basePath.resolve(getPath(entry));
     }
     
-    private String getFullPath(Trie<String, FileMetadata> entry) {
-        if (entry.getParent() == null) return "";
+    public Path getPath(Trie<String, FileMetadata> entry) {
+        if (entry.getParent() == null) return Paths.get("");
         
-        return getFullPath(entry.getParent()) + "/" + entry.getKey();
+        return getPath(entry.getParent()).resolve(entry.getKey());
     }
 }
