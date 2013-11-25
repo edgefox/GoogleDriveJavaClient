@@ -47,7 +47,7 @@ public class LocalChangesHandler {
         remoteChangesWatcher.ignoreChanges(handledIds);
     }
 
-    private void tryHandleLocalChange(FileSystemChange<Path> change, int triesLeft) {
+    void tryHandleLocalChange(FileSystemChange<Path> change, int triesLeft) {
         boolean success = true;
         try {
             logger.info(String.format("Trying to apply change: %s", change));
@@ -74,7 +74,7 @@ public class LocalChangesHandler {
         }
     }
 
-    private void handleNewEntry(FileSystemChange<Path> change) throws IOException {
+    void handleNewEntry(FileSystemChange<Path> change) throws IOException {
         if (!change.isRemoved()) {
             if (change.isDir()) {
                 createDirectory(change);
@@ -84,7 +84,7 @@ public class LocalChangesHandler {
         }
     }
 
-    private void handleExistingEntry(FileSystemChange<Path> change, Trie<String, FileMetadata> imageFile) throws IOException {
+    void handleExistingEntry(FileSystemChange<Path> change, Trie<String, FileMetadata> imageFile) throws IOException {
         if (change.isRemoved()) {
             deleteRemoteFile(imageFile);
         } else {
@@ -96,7 +96,7 @@ public class LocalChangesHandler {
         }
     }
 
-    private void createDirectory(FileSystemChange<Path> change) throws IOException {
+    void createDirectory(FileSystemChange<Path> change) throws IOException {
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(trackedPath.relativize(change.getParentId()));
         String parentId = parentImageFile.getModel().getId();
         FileMetadata fileMetadata = googleDriveService.createOrGetDirectory(parentId, change.getTitle());
@@ -104,13 +104,13 @@ public class LocalChangesHandler {
         handledIds.add(fileMetadata.getId());
     }
 
-    private void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
+    void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
         googleDriveService.delete(imageFile.getModel().getId());
         fileSystem.delete(imageFile);
         handledIds.add(imageFile.getModel().getId());
     }
 
-    private void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
+    void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
         Trie<String, FileMetadata> parent = fileSystem.get(trackedPath.relativize(change.getParentId()));
 
         if (parent == null) {

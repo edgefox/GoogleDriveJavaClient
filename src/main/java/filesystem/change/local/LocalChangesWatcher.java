@@ -27,21 +27,24 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private static final Logger logger = Logger.getLogger(LocalChangesWatcher.class);
 
-    static {
+    @Inject
+    private Path trackedPath;
+
+    private WatchService watchService;
+    private Map<WatchKey, Path> watchKeyToPath = new HashMap<>();
+
+    public LocalChangesWatcher() {
         watchService = null;
         try {
             watchService = FileSystems.getDefault().newWatchService();
         } catch (IOException e) {
-            logger.error(e);
+            throw new IllegalStateException(e);
         }
     }
 
-    private static WatchService watchService;
-    private static Map<WatchKey, Path> watchKeyToPath = new HashMap<>();
-    @Inject
-    private Path trackedPath;
-    @Inject
-    private volatile filesystem.FileSystem fileSystem;
+    public void setTrackedPath(Path trackedPath) {
+        this.trackedPath = trackedPath;
+    }
 
     public void start() throws IOException {
         logger.info("Trying to start LocalChangesWatcher");
@@ -62,7 +65,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
         });
     }
 
-    private void register(Path path) throws IOException {
+    void register(Path path) throws IOException {
         WatchKey watchKey = path.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         watchKeyToPath.put(watchKey, path);
     }
@@ -74,7 +77,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
             while (!Thread.currentThread().isInterrupted()) {
                 WatchKey key;
                 try {
-                    key = watchService.poll(10, TimeUnit.SECONDS);
+                    key = watchService.take();
                 } catch (InterruptedException e) {
                     logger.info("LocalChangesWatcher has been interrupted");
                     return;

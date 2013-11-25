@@ -1,8 +1,10 @@
 package filesystem.change.remote;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import service.GoogleDriveService;
 
 /**
  * User: Ivan Lyutov
@@ -10,14 +12,14 @@ import org.junit.Test;
  * Time: 12:17 PM
  */
 public class RemoteChangesWatcherTest {
+    @Mock
+    private GoogleDriveService googleDriveService;
+    private RemoteChangesWatcher remoteChangesWatcher;    
+    
     @Before
     public void setUp() throws Exception {
-
-    }
-
-    @After
-    public void tearDown() throws Exception {
-
+        MockitoAnnotations.initMocks(this);
+        remoteChangesWatcher.start();
     }
 
     @Test

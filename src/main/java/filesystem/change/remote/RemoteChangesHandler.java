@@ -49,7 +49,7 @@ public class RemoteChangesHandler {
         localChangesWatcher.ignoreChanges(handledPaths);
     }
 
-    private void tryHandleRemoteChange(FileSystemChange<String> change, int triesLeft) {
+    void tryHandleRemoteChange(FileSystemChange<String> change, int triesLeft) {
         boolean success = true;
         try {
             Trie<String, FileMetadata> imageFile = fileSystem.get(change.getId());
@@ -75,7 +75,7 @@ public class RemoteChangesHandler {
         }
     }
 
-    private void handleNewEntry(FileSystemChange<String> change) throws IOException, InterruptedException {
+    void handleNewEntry(FileSystemChange<String> change) throws IOException, InterruptedException {
         if (!change.isRemoved()) {
             if (change.isDir()) {
                 createDirectory(change);
@@ -85,7 +85,7 @@ public class RemoteChangesHandler {
         }
     }
 
-    private void handleExistingEntry(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) throws IOException, InterruptedException {
+    void handleExistingEntry(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) throws IOException, InterruptedException {
         File localFile = fileSystem.getFullPath(imageFile).toFile();
         if (change.isRemoved()) {
             deleteLocalFile(imageFile, localFile);
@@ -96,12 +96,12 @@ public class RemoteChangesHandler {
         }
     }
 
-    private boolean isMoved(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) {
+    boolean isMoved(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) {
         return !change.getTitle().equals(imageFile.getKey()) || 
                !change.getParentId().equals(imageFile.getParent().getModel().getId());
     }
 
-    private void createDirectory(FileSystemChange<String> change) throws IOException {
+    void createDirectory(FileSystemChange<String> change) throws IOException {
         Path parentPath = convertRemoteIdToLocal(change.getParentId());
 
         if (parentPath == null) {
@@ -117,7 +117,7 @@ public class RemoteChangesHandler {
         handledPaths.add(newDirectoryPath);
     }
 
-    private void moveLocalFile(FileSystemChange<String> change, 
+    void moveLocalFile(FileSystemChange<String> change, 
                                Trie<String, FileMetadata> imageFile) throws IOException {
         Path source = fileSystem.getFullPath(imageFile);
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
@@ -138,7 +138,7 @@ public class RemoteChangesHandler {
         }
     }
 
-    private void updateLocalFile(FileSystemChange<String> change,
+    void updateLocalFile(FileSystemChange<String> change,
                                  Trie<String, FileMetadata> imageFile,
                                  File localFile) throws InterruptedException, IOException {
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
@@ -146,13 +146,13 @@ public class RemoteChangesHandler {
         handledPaths.add(Paths.get(localFile.toURI()));
     }
 
-    private void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) {
+    void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) {
         localFile.delete();
         fileSystem.delete(imageFile);
         handledPaths.add(Paths.get(localFile.toURI()));
     }
 
-    private void downloadNewFile(FileSystemChange<String> change) throws InterruptedException, IOException {
+    void downloadNewFile(FileSystemChange<String> change) throws InterruptedException, IOException {
         Trie<String, FileMetadata> parent = fileSystem.get(change.getParentId());
 
         if (parent == null) {
