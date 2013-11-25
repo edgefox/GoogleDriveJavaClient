@@ -51,7 +51,7 @@ public class LocalChangesWatcherTest {
             Files.createFile(path);
         }
         
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(10);
         
         for (FileSystemChange<Path> change : localChangesWatcher.getChangesCopy()) {
             paths.remove(change.getId());
@@ -66,7 +66,7 @@ public class LocalChangesWatcherTest {
         Path dirPath = trackedPath.resolve(Paths.get("one/two/three/four"));
         Files.createDirectories(dirPath);
         
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(10);
         
         assertEquals("New directories were not handled",
                      trackedPath.relativize(dirPath).getNameCount(), 
@@ -79,7 +79,7 @@ public class LocalChangesWatcherTest {
             Files.createFile(path);
         }
 
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(10);
 
         for (FileSystemChange<Path> change : localChangesWatcher.getChangesCopy()) {
             paths.remove(change.getId());
