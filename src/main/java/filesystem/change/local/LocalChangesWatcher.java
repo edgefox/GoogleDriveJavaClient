@@ -119,7 +119,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                                     changes.add(new FileSystemChange<>(dir,
                                                                        dir.getParent(),
                                                                        dir.getFileName().toString(),
-                                                                       Files.isDirectory(dir)));
+                                                                       true));
                                     register(dir);
                                     return FileVisitResult.CONTINUE;
                                 }
@@ -131,7 +131,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                                     changes.add(new FileSystemChange<>(file,
                                                                        file.getParent(),
                                                                        file.getFileName().toString(),
-                                                                       Files.isDirectory(file)));
+                                                                       false));
                                     return FileVisitResult.CONTINUE;
                                 }
                             });
