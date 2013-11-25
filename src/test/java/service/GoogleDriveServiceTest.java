@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import static junit.framework.Assert.*;
@@ -138,6 +139,13 @@ public class GoogleDriveServiceTest {
     public void testHandleRedirect() throws Exception {
         String refreshToken = googleDriveService.handleRedirect();
         assertEquals("REFRESH_TOKEN", refreshToken);
+    }
+    
+    @Test
+    public void testGetAllChildrenIds() throws Exception{
+        Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(GoogleDriveService.ROOT_DIR_ID);
+        assertNotNull(allChildrenIds);
+        assertFalse(allChildrenIds.isEmpty());
     }
 
     @After
