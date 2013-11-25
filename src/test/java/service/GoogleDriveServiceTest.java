@@ -2,6 +2,7 @@ package service;
 
 import com.google.api.services.drive.model.About;
 import filesystem.FileMetadata;
+import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -146,6 +147,25 @@ public class GoogleDriveServiceTest {
         Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(GoogleDriveService.ROOT_DIR_ID);
         assertNotNull(allChildrenIds);
         assertFalse(allChildrenIds.isEmpty());
+    }
+    
+    @Test
+    public void testGetEmptyChanges() throws Exception{
+        Long largestChangeId = googleDriveService.about().getLargestChangeId();
+        RemoteChangePackage changes = googleDriveService.getChanges(largestChangeId);
+        assertTrue(changes.getChanges().isEmpty());
+        assertTrue(changes.getRevisionNumber() == largestChangeId);
+    }
+
+    @Test
+    public void testGetChanges() throws Exception{
+        Long largestChangeId = googleDriveService.about().getLargestChangeId();
+
+        googleDriveService.upload(GoogleDriveService.ROOT_DIR_ID, file1);
+        
+        RemoteChangePackage changes = googleDriveService.getChanges(largestChangeId);
+        assertEquals(1, changes.getChanges().size());
+        assertTrue(changes.getRevisionNumber() != largestChangeId);
     }
 
     @After
