@@ -6,6 +6,10 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +26,9 @@ import static junit.framework.Assert.*;
  * Time: 12:21 PM
  */
 public class GoogleDriveServiceTest {
+    @Mock
+    private AuthRedirectListener authRedirectListener;
+    @InjectMocks
     private GoogleDriveService googleDriveService;
     private static final File serviceDirectory = new File("/tmp/GoogleDrive");
     private File file1;
@@ -30,11 +37,17 @@ public class GoogleDriveServiceTest {
     @Before
     public void setUp() throws Exception {
         initGoogleDrive();
+        initMocks();
         file1 = new File(serviceDirectory, UUID.randomUUID().toString());
         file2 = new File(serviceDirectory, UUID.randomUUID().toString());
         FileUtils.forceMkdir(serviceDirectory);
         FileUtils.touch(file1);
         FileUtils.touch(file2);
+    }
+
+    private void initMocks() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        Mockito.when(authRedirectListener.listenForAuthComplete()).thenReturn("REFRESH_TOKEN");
     }
 
     private void initGoogleDrive() throws IOException {
@@ -113,6 +126,18 @@ public class GoogleDriveServiceTest {
         FileUtils.forceDelete(file1);
         googleDriveService.downloadFile(uploadedFile.getId(), file1);
         assertTrue(file1.exists());
+    }
+    
+    @Test
+    public void testAuth() throws Exception {
+        String redirectUrl = googleDriveService.auth();
+        assertNotNull(redirectUrl);
+    }
+    
+    @Test
+    public void testHandleRedirect() throws Exception {
+        String refreshToken = googleDriveService.handleRedirect();
+        assertEquals("REFRESH_TOKEN", refreshToken);
     }
 
     @After

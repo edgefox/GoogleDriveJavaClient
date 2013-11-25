@@ -4,8 +4,6 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.http.FileContent;
@@ -22,20 +20,12 @@ import filesystem.FileMetadata;
 import filesystem.change.FileSystemChange;
 import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.apache.log4j.lf5.util.StreamUtils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import service.util.RestrictedMimeTypes;
 import util.IOUtils;
 
 import javax.inject.Inject;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,6 +45,8 @@ public class GoogleDriveService {
     public static final String ROOT_DIR_ID = "root";
 
     private static final Logger logger = Logger.getLogger(GoogleDriveService.class);
+    @Inject
+    private AuthRedirectListener authRedirectListener;
     private Drive apiClient;
     private Credential credential;
     private static final Collection<String> SCOPES = Arrays.asList(
@@ -66,7 +58,7 @@ public class GoogleDriveService {
     private final String APP_KEY;
     private final String APP_SECRET;
     private String REFRESH_TOKEN;
-    private GoogleAuthorizationCodeFlow authFlow;
+    GoogleAuthorizationCodeFlow authFlow;
 
     private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title)";
     private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title";
@@ -99,6 +91,19 @@ public class GoogleDriveService {
         apiClient = new Drive.Builder(new ApacheHttpTransport(),
                                       new JacksonFactory(),
                                       credential).setApplicationName("DriveJava").build();
+    }
+
+    public String auth() throws Exception {
+        GoogleAuthorizationCodeRequestUrl authUrl = authFlow.newAuthorizationUrl();
+        authUrl.setRedirectUri(REDIRECT_URI);
+
+        return authUrl.build();
+    }
+
+    public String handleRedirect() throws Exception {
+        REFRESH_TOKEN = authRedirectListener.listenForAuthComplete();
+        init();
+        return REFRESH_TOKEN;
     }
 
     public About about() throws IOException {
@@ -281,43 +286,6 @@ public class GoogleDriveService {
         ParentReference parentReference = parents.get(0);
 
         return parentReference.getIsRoot() ? "root" : parentReference.getId();
-    }
-
-    public String auth() throws Exception {
-        GoogleAuthorizationCodeRequestUrl authUrl = authFlow.newAuthorizationUrl();
-        authUrl.setRedirectUri(REDIRECT_URI);
-        
-        return authUrl.build();
-    }
-
-    public synchronized String handleRedirect() throws Exception {
-        Server server = new Server(9999);
-        ServletContextHandler handler = new ServletContextHandler();
-        handler.addServlet(new ServletHolder(new HttpServlet() {
-            @Override
-            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-                synchronized (GoogleDriveService.this) {
-                    try {
-                        String code = req.getParameterMap().get("code")[0];
-                        GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
-                        tokenRequest.setRedirectUri(REDIRECT_URI);
-                        GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
-                        REFRESH_TOKEN = googleTokenResponse.getRefreshToken();
-                        resp.setStatus(HttpStatus.SC_OK);
-                    } finally {
-                        GoogleDriveService.this.notifyAll();
-                    }
-                }
-            }
-        }), "/");
-        server.setHandler(handler);
-        server.start();
-        wait();
-        server.stop();
-        
-        init();
-        
-        return REFRESH_TOKEN;
     }
 
     @SuppressWarnings("checked")
