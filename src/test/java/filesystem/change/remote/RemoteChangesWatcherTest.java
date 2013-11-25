@@ -62,7 +62,7 @@ public class RemoteChangesWatcherTest {
     }
 
     @Test
-    public void testHandledChanges() throws Exception {
+    public void testGetChanges() throws Exception {
         TimeUnit.SECONDS.sleep(5);
         Set<FileSystemChange<String>> changesCopy = remoteChangesWatcher.getChangesCopy();
         assertNotNull(changesCopy);
@@ -70,7 +70,7 @@ public class RemoteChangesWatcherTest {
     }
 
     @Test
-    public void testHandledChangesWithExclusion() throws Exception {
+    public void testGetChangesWithExclusion() throws Exception {
         TimeUnit.SECONDS.sleep(5);
         HashSet<String> handledEntries = new HashSet<>();
         handledEntries.add(file2.getId());
