@@ -101,6 +101,19 @@ public class TrieTest {
     }
 
     @Test
+    public void testAddDuplicateChild() throws Exception {
+        int childrenCount = rootTrie.getChildren().size();
+        String childId = "child_id_1";
+        Trie<String, FileMetadata> newChild = rootTrie.addChild(new Trie<>(childId,
+                                                                           new FileMetadata(childId,
+                                                                                            "child_title_1",
+                                                                                            false,
+                                                                                            "child_checkSum")));
+        assertEquals(childrenCount, rootTrie.getChildren().size());
+        assertTrue(rootTrie.getChild(childId) == newChild);
+    }
+
+    @Test
     public void testRemoveChild() throws Exception {
         rootTrie.removeChild("child_id_1");
         assertNull(rootTrie.getChild("child_id_1"));

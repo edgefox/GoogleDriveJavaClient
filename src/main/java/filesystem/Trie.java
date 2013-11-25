@@ -82,7 +82,7 @@ public class Trie<K, M> implements Serializable {
     public Trie<K, M> addChild(K key, M model) {
         Trie<K, M> child = children.get(key);
         if (child == null) {
-            children.put(key, new Trie<K, M>(key, model));
+            children.put(key, new Trie<>(key, model));
         } else {
             child.setModel(model);
         }
@@ -91,7 +91,8 @@ public class Trie<K, M> implements Serializable {
 
     public Trie<K, M> addChild(Trie<K, M> node) {
         node.parent = this;
-        children.put(node.getKey(), node);
+        Trie<K, M> replacedChild = children.put(node.getKey(), node);
+        replacedChild.detachFromParent();
         return node;
     }
 
@@ -109,16 +110,12 @@ public class Trie<K, M> implements Serializable {
         if (!(o instanceof Trie)) return false;
 
         Trie trie = (Trie) o;
-        return new EqualsBuilder().append(key, trie.key).
-                append(model, trie.model).
-                append(children, trie.children).build();
+        return new EqualsBuilder().append(key, trie.key).build();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(key).
-                append(model).
-                append(children).build();
+        return new HashCodeBuilder().append(key).build();
     }
 
     @Override
