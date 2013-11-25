@@ -112,8 +112,8 @@ public class GoogleDriveService {
     }
 
     public FileMetadata upload(String folderId, java.io.File localFile) throws IOException {
-        logger.info(String.format("Trying to upload local file: %s", localFile));
-        
+        logger.trace(String.format("Trying to upload local file: %s", localFile));
+
         File file = new File();
         file.setTitle(localFile.getName());
         ParentReference parent = new ParentReference();
@@ -123,36 +123,36 @@ public class GoogleDriveService {
 
         FileMetadata child = findChild(folderId, localFile.getName());
         if (child != null) {
-            File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file, mediaContent));
-            logger.info(String.format("File has been successfully uploaded: '%s'", localFile));
+            File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file, mediaContent).setFields(FILE_REQUIRED_FIELDS));
+            logger.trace(String.format("File has been successfully uploaded: '%s'", localFile));
             return new FileMetadata(updatedFile);
         }
 
         Drive.Files.Insert insertedFile = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
         File uploadedFile = (File) safeExecute(insertedFile);
-        logger.info(String.format("File has been successfully uploaded: '%s'", localFile));
+        logger.trace(String.format("File has been successfully uploaded: '%s'", localFile));
 
         return new FileMetadata(uploadedFile);
     }
 
     public void delete(String id) throws IOException {
-        logger.info(String.format("Trying to delete remote resource with id '%s'", id));
+        logger.trace(String.format("Trying to delete remote resource with id '%s'", id));
         Drive.Files.Delete delete = apiClient.files().delete(id);
         safeExecute(delete);
-        logger.info(String.format("Resource with id '%s' has been successfully deleted from remote storage", id));
+        logger.trace(String.format("Resource with id '%s' has been successfully deleted from remote storage", id));
     }
 
     public FileMetadata getFileMetadata(String id) throws IOException {
-        logger.info(String.format("Trying to get metadata for remote resource with id '%s'", id));
+        logger.trace(String.format("Trying to get metadata for remote resource with id '%s'", id));
         Drive.Files.Get get = apiClient.files().get(id);
         File file = (File) safeExecute(get);
-        logger.info(String.format("Metadata for resource with id '%s' has been successfully retrieved", id));
+        logger.trace(String.format("Metadata for resource with id '%s' has been successfully retrieved", id));
 
         return new FileMetadata(file);
     }
 
     public FileMetadata createDirectory(String parentId, String name) throws IOException {
-        logger.info(String.format("Trying to create remote directory '%s'", name));
+        logger.trace(String.format("Trying to create remote directory '%s'", name));
         File dirToCreate = new File();
         dirToCreate.setTitle(name);
         dirToCreate.setMimeType("application/vnd.google-apps.folder");
@@ -163,7 +163,7 @@ public class GoogleDriveService {
         Drive.Files.Insert insert = apiClient.files().insert(dirToCreate).setFields(FILE_REQUIRED_FIELDS);
         File createdDirectory = (File) safeExecute(insert);
 
-        logger.info(String.format("Remote directory '%s' has been successfully created", name));
+        logger.trace(String.format("Remote directory '%s' has been successfully created", name));
 
         return new FileMetadata(createdDirectory);
     }
@@ -191,16 +191,16 @@ public class GoogleDriveService {
         File file = (File) safeExecute(get);
         return new FileMetadata(file);
     }
-    
+
     public Set<String> getAllChildrenIds(String folderId) throws IOException {
         Set<String> result = new HashSet<>();
         Drive.Children.List request = apiClient.children().list(folderId);
         ChildList childList = (ChildList) safeExecute(request);
         for (ChildReference childReference : childList.getItems()) {
             result.add(childReference.getId());
-            result.addAll(getAllChildrenIds(childReference.getId()));                        
+            result.addAll(getAllChildrenIds(childReference.getId()));
         }
-        
+
         return result;
     }
 
@@ -208,7 +208,7 @@ public class GoogleDriveService {
         Drive.Children.List list = apiClient.children().list(folderId)
                 .setQ(format("trashed = false and '%s' in parents", folderId));
         ChildList children = (ChildList) safeExecute(list);
-        List<FileMetadata> resultList = new ArrayList<FileMetadata>(children.getItems().size());
+        List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
         for (ChildReference childReference : children.getItems()) {
             Drive.Files.Get get = apiClient.files().get(childReference.getId()).setFields(FILE_REQUIRED_FIELDS);
             File file = (File) safeExecute(get);
@@ -221,7 +221,7 @@ public class GoogleDriveService {
     }
 
     public FileMetadata downloadFile(String id, java.io.File localFile) throws InterruptedException, IOException {
-        logger.info(String.format("Trying to download remote file with id '%s' to %s", id, localFile));
+        logger.trace(String.format("Trying to download remote file with id '%s' to %s", id, localFile));
         Drive.Files.Get get = apiClient.files().get(id).setFields(FILE_DOWNLOAD_FIELDS);
         File file = (File) safeExecute(get);
         GenericUrl downloadUrl = new GenericUrl(file.getDownloadUrl());
@@ -243,13 +243,13 @@ public class GoogleDriveService {
             IOUtils.safeClose(inputStream);
             IOUtils.safeClose(outputStream);
         }
-        logger.info(String.format("File has been successfully downloaded: %s", localFile));
+        logger.trace(String.format("File has been successfully downloaded: %s", localFile));
 
         return new FileMetadata(file);
     }
 
     public RemoteChangePackage getChanges(long revisionNumber) throws IOException {
-        List<FileSystemChange<String>> resultChanges = new ArrayList<FileSystemChange<String>>();
+        List<FileSystemChange<String>> resultChanges = new ArrayList<>();
         Drive.Changes.List request = apiClient.changes().list().setFields(DELTA_FIELDS_ALL_INFO);
         request.setStartChangeId(++revisionNumber);
         do {
@@ -259,10 +259,10 @@ public class GoogleDriveService {
                 for (Change change : changes.getItems()) {
                     String title = change.getDeleted() ? null : change.getFile().getTitle();
                     boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
-                    FileSystemChange<String> fileSystemChange = new FileSystemChange<String>(change.getFileId(),
-                                                                                             getParentId(change),
-                                                                                             title,
-                                                                                             isDir);
+                    FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
+                                                                                       getParentId(change),
+                                                                                       title,
+                                                                                       isDir);
                     resultChanges.add(fileSystemChange);
                 }
                 request.setPageToken(changes.getNextPageToken());
