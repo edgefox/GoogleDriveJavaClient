@@ -88,7 +88,11 @@ public class LocalChangesHandler {
         if (change.isRemoved()) {
             deleteRemoteFile(imageFile);
         } else {
-            uploadLocalFile(change);
+            if (change.isDir()) {
+                createDirectory(change);
+            } else {
+                uploadLocalFile(change);
+            }
         }
     }
 
