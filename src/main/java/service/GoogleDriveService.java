@@ -14,7 +14,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.*;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import com.google.inject.name.Named;
 import filesystem.FileMetadata;
 import filesystem.change.FileSystemChange;

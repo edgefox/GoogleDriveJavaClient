@@ -1,6 +1,6 @@
 package filesystem.change.remote;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import filesystem.FileSystem;
 import filesystem.change.ChangesWatcher;
 import filesystem.change.RemoteChangePackage;

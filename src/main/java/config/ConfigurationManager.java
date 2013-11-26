@@ -1,6 +1,6 @@
 package config;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileInputStream;

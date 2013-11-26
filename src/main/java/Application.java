@@ -1,4 +1,4 @@
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import config.ConfigurationManager;
 import filesystem.FileMetadata;
 import filesystem.FileSystem;

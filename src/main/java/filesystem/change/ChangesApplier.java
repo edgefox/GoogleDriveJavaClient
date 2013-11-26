@@ -1,6 +1,6 @@
 package filesystem.change;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import filesystem.change.local.LocalChangesHandler;
 import filesystem.change.local.LocalChangesWatcher;
 import filesystem.change.remote.RemoteChangesHandler;

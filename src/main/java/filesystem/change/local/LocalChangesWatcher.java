@@ -1,6 +1,6 @@
 package filesystem.change.local;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import filesystem.change.ChangesWatcher;
 import filesystem.change.FileSystemChange;
 import org.apache.log4j.Logger;
