@@ -11,6 +11,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,7 +35,9 @@ public class ChangesApplierTest {
 
     @Test
     public void testStart() throws Exception {
-        changesApplier.start();                
+        changesApplier.start();
+
+        TimeUnit.SECONDS.sleep(3);
         
         verify(localChangesHandler, times(1)).handle();
         verify(remoteChangesHandler, times(1)).handle();

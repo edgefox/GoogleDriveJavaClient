@@ -4,6 +4,8 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.http.FileContent;
@@ -58,7 +60,7 @@ public class GoogleDriveService {
     private final String APP_KEY;
     private final String APP_SECRET;
     private String REFRESH_TOKEN;
-    GoogleAuthorizationCodeFlow authFlow;
+    private GoogleAuthorizationCodeFlow authFlow;
 
     private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title)";
     private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title";
@@ -274,6 +276,13 @@ public class GoogleDriveService {
                 request.getPageToken().length() > 0);
 
         return new RemoteChangePackage(revisionNumber, resultChanges);
+    }
+    
+    public String requestRefreshToken(String code) throws IOException {
+        GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
+        tokenRequest.setRedirectUri(REDIRECT_URI);
+        GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
+        return googleTokenResponse.getRefreshToken();
     }
 
     private String getParentId(Change change) {

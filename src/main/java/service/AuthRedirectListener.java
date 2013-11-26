@@ -1,14 +1,11 @@
 package service;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import org.apache.http.HttpStatus;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -22,33 +19,37 @@ import java.io.IOException;
  * Time: 12:38 PM
  */
 @Singleton
-public class AuthRedirectListener extends Server {
-    @Inject
-    @Named("REDIRECT_URI")
-    private String REDIRECT_URI;
+public class AuthRedirectListener {
     @Inject
     private GoogleDriveService googleDriveService;
     private String refreshToken;
+    private Server server;
 
     private static final int DEFAULT_LISTENER_PORT = 9999;
+    private AuthRedirectListener.AuthRedirectServlet redirectServlet;
 
     public AuthRedirectListener() {
         this(DEFAULT_LISTENER_PORT);
     }
 
     public AuthRedirectListener(int port) {
-        super(port);
+        server = new Server(port);
         ServletContextHandler handler = new ServletContextHandler();
-        handler.addServlet(new ServletHolder(new AuthRedirectServlet()), "/");
-        setHandler(handler);
+        redirectServlet = new AuthRedirectServlet();
+        handler.addServlet(new ServletHolder(redirectServlet), "/");
+        server.setHandler(handler);
     }
 
     synchronized public String listenForAuthComplete() throws Exception {
-        start();
+        server.start();
         wait();
-        stop();
+        server.stop();
         
         return refreshToken;
+    }
+
+    AuthRedirectServlet getRedirectServlet() {
+        return redirectServlet;
     }
 
     class AuthRedirectServlet extends HttpServlet {
@@ -56,11 +57,8 @@ public class AuthRedirectListener extends Server {
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
             synchronized (AuthRedirectListener.this) {
                 try {
-                    String code = req.getParameterMap().get("code")[0];
-                    GoogleAuthorizationCodeTokenRequest tokenRequest = googleDriveService.authFlow.newTokenRequest(code);
-                    tokenRequest.setRedirectUri(REDIRECT_URI);
-                    GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
-                    refreshToken = googleTokenResponse.getRefreshToken();
+                    String code = req.getParameter("code");                    
+                    refreshToken = googleDriveService.requestRefreshToken(code);
                     resp.setStatus(HttpStatus.SC_OK);
                 } finally {
                     AuthRedirectListener.this.notifyAll();
