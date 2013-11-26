@@ -6,6 +6,7 @@ import filesystem.change.RemoteChangePackage;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,6 +28,8 @@ import static junit.framework.Assert.*;
  * Date: 11/19/13
  * Time: 12:21 PM
  */
+@Ignore
+//Create application config in test resources directory with refreshToken specified to run this test
 public class GoogleDriveServiceTest {
     @Mock
     private AuthRedirectListener authRedirectListener;
