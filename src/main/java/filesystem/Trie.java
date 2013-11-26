@@ -28,14 +28,14 @@ public class Trie<K, M> implements Serializable {
         this.key = key;
         this.model = model;
         this.parent = null;
-        this.children = new HashMap<K, Trie<K, M>>();
+        this.children = new HashMap<>();
     }
 
-    Trie(K key, M model, Trie<K, M> parent) {
+    public Trie(K key, M model, Trie<K, M> parent) {
         this.key = key;
         this.model = model;
         this.parent = parent;
-        this.children = new HashMap<K, Trie<K, M>>();
+        this.children = new HashMap<>();
     }
 
     public K getKey() {

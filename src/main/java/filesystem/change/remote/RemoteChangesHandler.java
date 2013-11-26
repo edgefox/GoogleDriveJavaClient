@@ -64,6 +64,7 @@ public class RemoteChangesHandler {
                 handleExistingEntry(change, imageFile);
             }
         } catch (Throwable e) {
+            e.printStackTrace();
             logger.warn(String.format("Failed to apply change: %s", change), e);
             success = false;
             if (triesLeft == 0) {
