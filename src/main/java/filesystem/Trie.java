@@ -79,16 +79,6 @@ public class Trie<K, M> implements Serializable {
         return children.get(key);
     }
 
-    public Trie<K, M> addChild(K key, M model) {
-        Trie<K, M> child = children.get(key);
-        if (child == null) {
-            children.put(key, new Trie<>(key, model));
-        } else {
-            child.setModel(model);
-        }
-        return child;
-    }
-
     public Trie<K, M> addChild(Trie<K, M> node) {
         node.parent = this;
         children.put(node.getKey(), node);
