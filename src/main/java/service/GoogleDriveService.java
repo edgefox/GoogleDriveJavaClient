@@ -278,7 +278,7 @@ public class GoogleDriveService {
         return new RemoteChangePackage(revisionNumber, resultChanges);
     }
     
-    public String requestRefreshToken(String code) throws IOException {
+    String requestRefreshToken(String code) throws IOException {
         GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
         tokenRequest.setRedirectUri(REDIRECT_URI);
         GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
