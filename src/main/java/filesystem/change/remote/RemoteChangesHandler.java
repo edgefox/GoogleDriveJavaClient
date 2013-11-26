@@ -27,7 +27,6 @@ import java.util.Set;
 @Singleton
 public class RemoteChangesHandler {
     private static final Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
-    @Inject
     private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;
@@ -38,6 +37,11 @@ public class RemoteChangesHandler {
     @Inject
     private GoogleDriveService googleDriveService;
     private Set<Path> handledPaths = new HashSet<>();
+
+    @Inject
+    public RemoteChangesHandler(Path trackedPath) {
+        this.trackedPath = trackedPath;
+    }
 
     public void handle() {
         handledPaths.clear();
@@ -97,8 +101,8 @@ public class RemoteChangesHandler {
     }
 
     boolean isMoved(FileSystemChange<String> change, Trie<String, FileMetadata> imageFile) {
-        return !change.getTitle().equals(imageFile.getKey()) || 
-               !change.getParentId().equals(imageFile.getParent().getModel().getId());
+        return !change.getTitle().equals(imageFile.getKey()) ||
+                !change.getParentId().equals(imageFile.getParent().getModel().getId());
     }
 
     void createDirectory(FileSystemChange<String> change) throws IOException {
@@ -117,11 +121,11 @@ public class RemoteChangesHandler {
         handledPaths.add(newDirectoryPath);
     }
 
-    void moveLocalFile(FileSystemChange<String> change, 
-                               Trie<String, FileMetadata> imageFile) throws IOException {
+    void moveLocalFile(FileSystemChange<String> change,
+                       Trie<String, FileMetadata> imageFile) throws IOException {
         Path source = fileSystem.getFullPath(imageFile);
         Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
-        Path destination = fileSystem.getFullPath(parentImageFile).resolve(change.getTitle());        
+        Path destination = fileSystem.getFullPath(parentImageFile).resolve(change.getTitle());
         Files.move(source, destination);
         if (!imageFile.getKey().equals(change.getTitle())) {
             imageFile.setKey(change.getTitle());
@@ -139,8 +143,8 @@ public class RemoteChangesHandler {
     }
 
     void updateLocalFile(FileSystemChange<String> change,
-                                 Trie<String, FileMetadata> imageFile,
-                                 File localFile) throws InterruptedException, IOException {
+                         Trie<String, FileMetadata> imageFile,
+                         File localFile) throws InterruptedException, IOException {
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         imageFile.setModel(fileMetadata);
         handledPaths.add(Paths.get(localFile.toURI()));

@@ -39,15 +39,15 @@ public class LocalChangesWatcherTest {
 
     @Before
     public void setUp() throws Exception {
-        localChangesWatcher = new LocalChangesWatcher();
-        localChangesWatcher.setTrackedPath(trackedPath);
+        localChangesWatcher = new LocalChangesWatcher(trackedPath);
+        MockitoAnnotations.initMocks(this);
         Files.createDirectory(trackedPath);
-        initMocks();
         localChangesWatcher.start();
     }
 
     @Test
     public void testGetChangesAfterFilesCreate() throws Exception {
+        TimeUnit.SECONDS.sleep(3);
         Set<Path> paths = new HashSet<>();
         for (int i = 0; i < 10; i++) {
             Path path = trackedPath.resolve(String.format("file_%d", i));
@@ -67,6 +67,7 @@ public class LocalChangesWatcherTest {
 
     @Test
     public void testGetChangesAfterFilesCreateWithExclusion() throws Exception {
+        TimeUnit.SECONDS.sleep(3);
         Set<Path> pathsToIgnore = new HashSet<>();
         pathsToIgnore.add(trackedPath.resolve("file_1"));
         localChangesWatcher.ignoreChanges(pathsToIgnore);
@@ -90,6 +91,7 @@ public class LocalChangesWatcherTest {
 
     @Test
     public void testGetChangesAfterNewDirectoryWithFilesCreate() throws Exception {
+        TimeUnit.SECONDS.sleep(3);
         Path dirPath = trackedPath.resolve(Paths.get("one/two/three/four"));
         Files.createDirectories(dirPath);
         
@@ -118,9 +120,5 @@ public class LocalChangesWatcherTest {
     @After
     public void tearDown() throws Exception {
         FileUtils.forceDelete(trackedPath.toFile());
-    }
-
-    private void initMocks() {
-        MockitoAnnotations.initMocks(this);
     }
 }

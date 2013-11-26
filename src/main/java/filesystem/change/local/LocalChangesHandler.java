@@ -23,7 +23,6 @@ import java.util.Set;
 @Singleton
 public class LocalChangesHandler {
     private static final Logger logger = Logger.getLogger(LocalChangesHandler.class);
-    @Inject
     private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;
@@ -34,6 +33,11 @@ public class LocalChangesHandler {
     @Inject
     private GoogleDriveService googleDriveService;
     private Set<String> handledIds = new HashSet<>();
+
+    @Inject
+    public LocalChangesHandler(Path trackedPath) {
+        this.trackedPath = trackedPath;
+    }
 
     public void handle() {
         handledIds.clear();

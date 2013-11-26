@@ -27,23 +27,19 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private static final Logger logger = Logger.getLogger(LocalChangesWatcher.class);
 
-    @Inject
     private Path trackedPath;
-
     private WatchService watchService;
     private Map<WatchKey, Path> watchKeyToPath = new HashMap<>();
 
-    public LocalChangesWatcher() {
+    @Inject
+    public LocalChangesWatcher(Path trackedPath) {
+        this.trackedPath = trackedPath;
         watchService = null;
         try {
             watchService = FileSystems.getDefault().newWatchService();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    public void setTrackedPath(Path trackedPath) {
-        this.trackedPath = trackedPath;
     }
 
     public void start() throws IOException {
