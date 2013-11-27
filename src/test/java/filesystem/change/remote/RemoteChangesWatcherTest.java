@@ -4,6 +4,7 @@ import filesystem.FileSystem;
 import filesystem.change.FileSystemChange;
 import filesystem.change.RemoteChangePackage;
 import junit.framework.Assert;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.*;
@@ -35,7 +36,7 @@ public class RemoteChangesWatcherTest {
     @Mock
     private FileSystem fileSystem;
     @Spy
-    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
+    private ScheduledExecutorService scheduledExecutorService;
     @InjectMocks
     private RemoteChangesWatcher remoteChangesWatcher;
     private FileSystemChange<String> file1 = new FileSystemChange<>(UUID.randomUUID().toString(),
@@ -57,6 +58,7 @@ public class RemoteChangesWatcherTest {
 
     @Before
     public void setUp() throws Exception {
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
         initMocks();
         remoteChangesWatcher.start();
     }
@@ -94,5 +96,10 @@ public class RemoteChangesWatcherTest {
 
         });
         when(googleDriveService.getChanges(anyLong())).thenReturn(changePackage);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        scheduledExecutorService.shutdownNow();
     }
 }

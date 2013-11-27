@@ -1,19 +1,17 @@
 package filesystem.change.local;
 
-import javax.inject.Singleton;
 import filesystem.change.ChangesWatcher;
 import filesystem.change.FileSystemChange;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -45,7 +43,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     public void start() throws IOException {
         logger.info("Trying to start LocalChangesWatcher");
         registerAll(trackedPath);
-        executorService.scheduleWithFixedDelay(new PollTask(), 0, 10, TimeUnit.SECONDS);
+        executorService.execute(new PollTask());
         logger.info("LocalChangesWatcher has been successfully started");
     }
 
@@ -79,69 +77,74 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     return;
                 }
 
-                if (key == null) {
-                    continue;
-                }
-
                 Path filePath = watchKeyToPath.get(key);
                 if (filePath == null) {
                     logger.warn("WatchKey not recognized!!");
                     continue;
                 }
 
-                WatchEvent<Path> lastEvent = (WatchEvent<Path>) getLastEvent(key);
-                Path child = filePath.resolve(lastEvent.context());
-                WatchEvent.Kind kind = lastEvent.kind();
-                try {
-                    if ((kind == ENTRY_MODIFY && Files.isDirectory(child)) ||
-                        Files.isHidden(child)) {
-                        resetKey(key);
-                        continue;
-                    }
-                } catch (IOException e) {
-                    logger.error(e);
+                List<WatchEvent<?>> watchEvents = key.pollEvents();
+                for (WatchEvent<?> watchEvent : watchEvents) {
+                    handleEvent(filePath, (WatchEvent<Path>) watchEvent);
                 }
-
-                changes.add(new FileSystemChange<>(child,
-                                                   kind == ENTRY_DELETE ? null : child.getParent(),
-                                                   child.getFileName().toString(),
-                                                   child.toFile().isDirectory()));
-
-                if (kind == ENTRY_CREATE) {
-                    try {
-                        if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
-                            Files.walkFileTree(child, new SimpleFileVisitor<Path>() {
-                                @Override
-                                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                                    if (Files.isHidden(dir)) return FileVisitResult.CONTINUE;                                    
-                                    
-                                    changes.add(new FileSystemChange<>(dir,
-                                                                       dir.getParent(),
-                                                                       dir.getFileName().toString(),
-                                                                       true));
-                                    register(dir);
-                                    return FileVisitResult.CONTINUE;
-                                }
-
-                                @Override
-                                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                                    if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
-                                    
-                                    changes.add(new FileSystemChange<>(file,
-                                                                       file.getParent(),
-                                                                       file.getFileName().toString(),
-                                                                       false));
-                                    return FileVisitResult.CONTINUE;
-                                }
-                            });
-                        }
-                    } catch (IOException e) {
-                        logger.warn(e);
-                    }
-                }
-
+                
                 resetKey(key);
             }
+        }
+
+        private void handleEvent(Path filePath, WatchEvent<Path> event) {
+            Path child = filePath.resolve(event.context());
+            WatchEvent.Kind kind = event.kind();
+            try {
+                if ((kind == ENTRY_MODIFY && Files.isDirectory(child)) ||
+                    Files.isHidden(child)) {
+                    return;
+                }
+            } catch (IOException e) {
+                logger.error(e);
+            }
+
+            changes.add(new FileSystemChange<>(child,
+                                               kind == ENTRY_DELETE ? null : child.getParent(),
+                                               child.getFileName().toString(),
+                                               child.toFile().isDirectory()));
+
+            if (kind == ENTRY_CREATE) {
+                try {
+                    if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
+                        registerNewDirectory(child);
+                    }
+                } catch (IOException e) {
+                    logger.warn(e);
+                }
+            }
+        }
+
+        private void registerNewDirectory(Path child) throws IOException {
+            Files.walkFileTree(child, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    if (Files.isHidden(dir)) return FileVisitResult.CONTINUE;
+
+                    changes.add(new FileSystemChange<>(dir,
+                                                       dir.getParent(),
+                                                       dir.getFileName().toString(),
+                                                       true));
+                    register(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
+
+                    changes.add(new FileSystemChange<>(file,
+                                                       file.getParent(),
+                                                       file.getFileName().toString(),
+                                                       false));
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         }
 
         private void resetKey(WatchKey key) {
@@ -152,11 +155,6 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     logger.info("LocalChangesWatcher has been stopped");
                 }
             }
-        }
-
-        private WatchEvent<?> getLastEvent(WatchKey key) {
-            List<WatchEvent<?>> watchEvents = key.pollEvents();
-            return watchEvents.get(watchEvents.size() - 1);
         }
     }
 }

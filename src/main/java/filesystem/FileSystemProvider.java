@@ -52,7 +52,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
             Files.walkFileTree(trackedPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (trackedPath.equals(dir)) return FileVisitResult.CONTINUE;
+                    if (trackedPath.equals(dir) || Files.isHidden(dir)) return FileVisitResult.CONTINUE;
 
                     fileSystem.update(trackedPath.relativize(dir), getPathMetadata(dir, attrs));
                     return FileVisitResult.CONTINUE;
@@ -60,6 +60,8 @@ public class FileSystemProvider implements Provider<FileSystem> {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
+                    
                     fileSystem.update(trackedPath.relativize(file), getPathMetadata(file, attrs));
                     return FileVisitResult.CONTINUE;
                 }

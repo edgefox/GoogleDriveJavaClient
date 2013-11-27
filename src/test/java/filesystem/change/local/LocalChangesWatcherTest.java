@@ -1,10 +1,8 @@
 package filesystem.change.local;
 
-import filesystem.change.FileSystemChange;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
@@ -20,7 +18,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * User: Ivan Lyutov
@@ -28,19 +25,21 @@ import static junit.framework.Assert.assertTrue;
  * Time: 12:17 PM
  */
 
-@Ignore
-//TODO: Seems unreliable. Think how to rework it.
 public class LocalChangesWatcherTest {
     private Path trackedPath = Paths.get("/tmp/GoogleDrive");
     @Spy
-    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
+    private ScheduledExecutorService scheduledExecutorService;
     @InjectMocks
     private LocalChangesWatcher localChangesWatcher;
 
     @Before
     public void setUp() throws Exception {
         localChangesWatcher = new LocalChangesWatcher(trackedPath);
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
         MockitoAnnotations.initMocks(this);
+        if (Files.exists(trackedPath)) {
+            FileUtils.forceDelete(trackedPath.toFile());
+        }
         Files.createDirectory(trackedPath);
         localChangesWatcher.start();
     }
@@ -54,20 +53,12 @@ public class LocalChangesWatcherTest {
             paths.add(path);
             Files.createFile(path);
         }
-        
-        TimeUnit.SECONDS.sleep(10);
-        
-        for (FileSystemChange<Path> change : localChangesWatcher.getChangesCopy()) {
-            paths.remove(change.getId());
-        }
 
-        assertTrue("Created files were not handled",
-                   paths.isEmpty());
+        waitUntilPathsHandled(30000, paths.size());
     }
 
     @Test
     public void testGetChangesAfterFilesCreateWithExclusion() throws Exception {
-        TimeUnit.SECONDS.sleep(3);
         Set<Path> pathsToIgnore = new HashSet<>();
         pathsToIgnore.add(trackedPath.resolve("file_1"));
         localChangesWatcher.ignoreChanges(pathsToIgnore);
@@ -77,29 +68,17 @@ public class LocalChangesWatcherTest {
             paths.add(path);
             Files.createFile(path);
         }
-
-        TimeUnit.SECONDS.sleep(10);
-
-        for (FileSystemChange<Path> change : localChangesWatcher.getChangesCopy()) {
-            paths.remove(change.getId());
-        }
-
-        assertTrue("Created files were not handled",
-                   paths.size() == 1);
-        assertTrue(paths.containsAll(pathsToIgnore));
+        
+        waitUntilPathsHandled(30000, paths.size() - pathsToIgnore.size());
     }
 
     @Test
     public void testGetChangesAfterNewDirectoryWithFilesCreate() throws Exception {
-        TimeUnit.SECONDS.sleep(3);
         Path dirPath = trackedPath.resolve(Paths.get("one/two/three/four"));
         Files.createDirectories(dirPath);
+        int dirsCreated = trackedPath.relativize(dirPath).getNameCount();
         
-        TimeUnit.SECONDS.sleep(10);
-        
-        assertEquals("New directories were not handled",
-                     trackedPath.relativize(dirPath).getNameCount(), 
-                     localChangesWatcher.getChangesCopy().size());
+        waitUntilPathsHandled(30000, dirsCreated);
 
         Set<Path> paths = new HashSet<>();
         for (int i = 0; i < 10; i++) {
@@ -108,17 +87,22 @@ public class LocalChangesWatcherTest {
             Files.createFile(path);
         }
 
-        TimeUnit.SECONDS.sleep(10);
-
-        for (FileSystemChange<Path> change : localChangesWatcher.getChangesCopy()) {
-            paths.remove(change.getId());
+        waitUntilPathsHandled(30000, paths.size() + dirsCreated);
+    }
+    
+    private void waitUntilPathsHandled(long timeout, int expectedSize) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startTime < timeout) || 
+                localChangesWatcher.getChangesCopy().size() != expectedSize) {
         }
-
-        assertTrue("Files in new folder were not handled", paths.isEmpty());
+        
+        assertEquals("Created paths were not handled",
+                     expectedSize, localChangesWatcher.getChangesCopy().size());
     }
 
     @After
     public void tearDown() throws Exception {
         FileUtils.forceDelete(trackedPath.toFile());
+        scheduledExecutorService.shutdownNow();
     }
 }
