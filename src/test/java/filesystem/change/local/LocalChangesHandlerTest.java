@@ -125,6 +125,7 @@ public class LocalChangesHandlerTest {
         verify(localChangesHandler, times(1)).createDirectory(directoryChange);
         verify(googleDriveService, times(1)).createOrGetDirectory(GoogleDriveService.ROOT_DIR_ID, directoryImage.getKey());
         verify(fileSystem, times(1)).update(trackedPath.relativize(directoryPath), directoryImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(directoryChange);
 
         assertTrue(handledIds.contains(directoryImage.getModel().getId()));
     }
@@ -143,6 +144,7 @@ public class LocalChangesHandlerTest {
         verify(localChangesHandler, times(1)).uploadLocalFile(fileChange);
         verify(googleDriveService, times(1)).upload(GoogleDriveService.ROOT_DIR_ID, filePath.toFile());
         verify(fileSystem, times(1)).update(trackedPath.relativize(filePath), fileImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(fileChange);
 
         assertTrue(handledIds.contains(fileImage.getModel().getId()));
     }
@@ -161,6 +163,7 @@ public class LocalChangesHandlerTest {
         verify(localChangesHandler, times(1)).createDirectory(directoryChange);
         verify(googleDriveService, times(1)).createOrGetDirectory(GoogleDriveService.ROOT_DIR_ID, directoryImage.getKey());
         verify(fileSystem, times(1)).update(trackedPath.relativize(directoryPath), directoryImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(directoryChange);
 
         assertTrue(handledIds.contains(directoryImage.getModel().getId()));
     }
@@ -179,6 +182,7 @@ public class LocalChangesHandlerTest {
         verify(localChangesHandler, times(1)).uploadLocalFile(fileChange);
         verify(googleDriveService, times(1)).upload(GoogleDriveService.ROOT_DIR_ID, filePath.toFile());
         verify(fileSystem, times(1)).update(trackedPath.relativize(filePath), fileImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(fileChange);
 
         assertTrue(handledIds.contains(fileImage.getModel().getId()));
     }
@@ -197,7 +201,49 @@ public class LocalChangesHandlerTest {
         verify(localChangesHandler, times(1)).deleteRemoteFile(deletedImage);
         verify(googleDriveService, times(1)).delete(deletedImage.getModel().getId());
         verify(fileSystem, times(1)).delete(deletedImage);
+        verify(localChangesWatcher, times(1)).changeHandled(deletedChange);
 
         assertTrue(handledIds.contains(deletedImage.getModel().getId()));
+    }
+
+    @Test
+    public void testHandleNewFileUploadFail() throws Exception {
+        Set<FileSystemChange<Path>> changes = new HashSet<>();
+        changes.add(fileChange);
+
+        when(googleDriveService.upload(GoogleDriveService.ROOT_DIR_ID, filePath.toFile())).
+                thenThrow(new IOException("Failed"));
+        when(localChangesWatcher.getChangesCopy()).thenReturn(changes);
+        when(fileSystem.get(filePath)).thenReturn(null);
+
+        localChangesHandler.handle();
+
+        verify(localChangesHandler, times(4)).handleNewEntry(fileChange);
+        verify(localChangesHandler, times(4)).uploadLocalFile(fileChange);
+        verify(googleDriveService, times(4)).upload(GoogleDriveService.ROOT_DIR_ID, filePath.toFile());
+        verify(fileSystem, never()).update(trackedPath.relativize(filePath), fileImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(fileChange);
+
+        assertFalse(handledIds.contains(fileImage.getModel().getId()));
+    }
+
+    @Test
+    public void testHandleNewFileFailWithoutParentEntry() throws Exception {
+        Set<FileSystemChange<Path>> changes = new HashSet<>();
+        changes.add(fileChange);
+
+        when(localChangesWatcher.getChangesCopy()).thenReturn(changes);
+        when(fileSystem.get(filePath)).thenReturn(fileImage);
+        when(fileSystem.get(trackedPath.relativize(fileChange.getParentId()))).thenReturn(null);
+
+        localChangesHandler.handle();
+
+        verify(localChangesHandler, times(4)).handleNewEntry(fileChange);
+        verify(localChangesHandler, times(4)).uploadLocalFile(fileChange);
+        verify(googleDriveService, never()).upload(GoogleDriveService.ROOT_DIR_ID, filePath.toFile());
+        verify(fileSystem, never()).update(trackedPath.relativize(filePath), fileImage.getModel());
+        verify(localChangesWatcher, times(1)).changeHandled(fileChange);
+
+        assertFalse(handledIds.contains(fileImage.getModel().getId()));
     }
 }
