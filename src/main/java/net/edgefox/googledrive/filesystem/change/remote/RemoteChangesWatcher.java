@@ -45,7 +45,7 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
                 changes.addAll(remoteChangePackage.getChanges());
                 fileSystem.updateFileSystemRevision(remoteChangePackage.getRevisionNumber());
             } catch (IOException e) {
-                logger.error(e);
+                logger.error("Error occurred while fetching new changes from GoogleDrive service", e);
             }
         }
     }

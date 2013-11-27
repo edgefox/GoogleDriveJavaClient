@@ -13,6 +13,8 @@ import java.io.InputStream;
  */
 public class IOUtils {
     private static final Logger logger = Logger.getLogger(IOUtils.class);
+    
+    private IOUtils() {}
 
     public static void safeClose(InputStream inputStream) {
         try {
@@ -20,7 +22,7 @@ public class IOUtils {
                 inputStream.close();
             }
         } catch (IOException e) {
-            logger.error(e);
+            logger.error("Unable to close the stream", e);
         }
     }
 
@@ -30,7 +32,7 @@ public class IOUtils {
                 outputStream.close();
             }
         } catch (IOException e) {
-            logger.error(e);
+            logger.error("Unable to close the stream", e);
         }
     }
 }

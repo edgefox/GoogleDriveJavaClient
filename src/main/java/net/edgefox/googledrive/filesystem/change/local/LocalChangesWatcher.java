@@ -73,7 +73,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                 try {
                     key = watchService.take();
                 } catch (InterruptedException e) {
-                    logger.info("LocalChangesWatcher has been interrupted");
+                    logger.info("LocalChangesWatcher has been interrupted", e);
                     return;
                 }
 
@@ -101,7 +101,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     return;
                 }
             } catch (IOException e) {
-                logger.error(e);
+                logger.error(String.format("Unable to handle event: %s", event), e);
             }
 
             changes.add(new FileSystemChange<>(child,
@@ -115,7 +115,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                         registerNewDirectory(child);
                     }
                 } catch (IOException e) {
-                    logger.warn(e);
+                    logger.error(String.format("Unable to register child elements of folder: %s", child), e);
                 }
             }
         }

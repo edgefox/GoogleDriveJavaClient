@@ -16,7 +16,9 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.*;
+
 import javax.inject.Singleton;
+
 import com.google.inject.name.Named;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
@@ -255,29 +257,25 @@ public class GoogleDriveService {
         Drive.Changes.List request = apiClient.changes().list().setFields(DELTA_FIELDS_ALL_INFO);
         request.setStartChangeId(++revisionNumber);
         do {
-            try {
-                ChangeList changes = (ChangeList) safeExecute(request);
-                revisionNumber = changes.getLargestChangeId();
-                for (Change change : changes.getItems()) {
-                    String title = change.getDeleted() ? null : change.getFile().getTitle();
-                    boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
-                    FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
-                                                                                       getParentId(change),
-                                                                                       title,
-                                                                                       isDir);
-                    resultChanges.add(fileSystemChange);
-                }
-                request.setPageToken(changes.getNextPageToken());
-            } catch (IOException e) {
-                logger.error(e);
-                request.setPageToken(null);
+            ChangeList changes = (ChangeList) safeExecute(request);
+            revisionNumber = changes.getLargestChangeId();
+            for (Change change : changes.getItems()) {
+                String title = change.getDeleted() ? null : change.getFile().getTitle();
+                boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
+                FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
+                                                                                   getParentId(change),
+                                                                                   title,
+                                                                                   isDir);
+                resultChanges.add(fileSystemChange);
             }
+            request.setPageToken(changes.getNextPageToken());
+            request.setPageToken(null);
         } while (request.getPageToken() != null &&
                 request.getPageToken().length() > 0);
 
         return new RemoteChangePackage(revisionNumber, resultChanges);
     }
-    
+
     String requestRefreshToken(String code) throws IOException {
         GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
         tokenRequest.setRedirectUri(REDIRECT_URI);
@@ -310,15 +308,17 @@ public class GoogleDriveService {
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
                 try {
                     timeout += TIMEOUT_STEP;
-                    logger.warn(String.format("Request timeout. Retrying in %d seconds", timeout));
+                    logger.warn(String.format("Request timeout. Retrying in %d seconds", timeout), e);
                     TimeUnit.SECONDS.sleep(timeout);
                 } catch (InterruptedException e1) {
-                    logger.warn(e);
+                    logger.warn("Request execution was interrupted", e1);
                 }
             }
         }
 
-        if (result == null) throw new IOException("Connection timeout");
+        if (result == null) {
+            throw new IOException("Connection timeout");
+        }
 
         return result;
     }
