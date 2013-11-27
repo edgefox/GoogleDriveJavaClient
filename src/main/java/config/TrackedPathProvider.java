@@ -1,6 +1,7 @@
 package config;
 
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
@@ -15,6 +16,7 @@ import java.util.Scanner;
  * Date: 11/22/13
  * Time: 3:40 PM
  */
+@Singleton
 public class TrackedPathProvider implements Provider<Path> {
     private static Path trackedPath;
     @Inject

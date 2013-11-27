@@ -30,9 +30,9 @@ public class Main extends AbstractModule {
     protected void configure() {
         ConfigurationManager configManager = initConfigurationManager();
         bind(ConfigurationManager.class).toInstance(configManager);
-        bind(Path.class).toProvider(new TrackedPathProvider());
+        bind(Path.class).toProvider(TrackedPathProvider.class);
         loadProperties(binder(), configManager);
-        bind(FileSystem.class).toProvider(new FileSystemProvider());
+        bind(FileSystem.class).toProvider(FileSystemProvider.class);
         bind(ScheduledExecutorService.class).toInstance(initApplicationThreadPool());
     }
 

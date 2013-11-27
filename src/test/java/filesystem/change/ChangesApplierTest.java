@@ -2,6 +2,7 @@ package filesystem.change;
 
 import filesystem.change.local.LocalChangesHandler;
 import filesystem.change.remote.RemoteChangesHandler;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -41,5 +42,10 @@ public class ChangesApplierTest {
         
         verify(localChangesHandler, times(1)).handle();
         verify(remoteChangesHandler, times(1)).handle();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        scheduledExecutorService.shutdownNow();
     }
 }

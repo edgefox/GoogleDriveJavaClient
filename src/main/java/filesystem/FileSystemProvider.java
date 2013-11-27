@@ -1,6 +1,7 @@
 package filesystem;
 
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.inject.Inject;
@@ -20,6 +21,7 @@ import java.util.Arrays;
  * Date: 10/2/13
  * Time: 4:24 PM
  */
+@Singleton
 public class FileSystemProvider implements Provider<FileSystem> {
     @Inject
     private Path trackedPath;
