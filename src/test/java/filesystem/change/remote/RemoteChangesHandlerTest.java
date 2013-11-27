@@ -9,7 +9,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
 import service.GoogleDriveService;
 
 import java.io.File;
@@ -29,6 +31,7 @@ import static org.mockito.Mockito.*;
  * Date: 11/25/13
  * Time: 12:16 PM
  */
+@RunWith(MockitoJUnitRunner.class)
 public class RemoteChangesHandlerTest {
     private Path trackedPath = Paths.get("/tmp/GoogleDrive");
     @Mock
@@ -43,7 +46,7 @@ public class RemoteChangesHandlerTest {
     private Set<Path> handledPaths = new HashSet<>();
     @InjectMocks
     @Spy
-    private RemoteChangesHandler remoteChangesHandler;
+    private RemoteChangesHandler remoteChangesHandler = new RemoteChangesHandler(trackedPath);
 
     private FileSystemChange<String> directoryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                               GoogleDriveService.ROOT_DIR_ID,
@@ -70,8 +73,6 @@ public class RemoteChangesHandlerTest {
                                                                                GoogleDriveService.ROOT_DIR_ID,
                                                                                true,
                                                                                null));
-        remoteChangesHandler = new RemoteChangesHandler(trackedPath);
-        MockitoAnnotations.initMocks(this);
         when(fileSystem.get(GoogleDriveService.ROOT_DIR_ID)).thenReturn(rootTrie);
     }
 
