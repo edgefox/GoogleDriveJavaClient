@@ -22,7 +22,7 @@ public class IOUtils {
                 inputStream.close();
             }
         } catch (IOException e) {
-            logger.error("Unable to close the stream", e);
+            logger.error("Unable to close the stream.", e);
         }
     }
 
@@ -32,7 +32,7 @@ public class IOUtils {
                 outputStream.close();
             }
         } catch (IOException e) {
-            logger.error("Unable to close the stream", e);
+            logger.error("Unable to close the stream.", e);
         }
     }
 }
