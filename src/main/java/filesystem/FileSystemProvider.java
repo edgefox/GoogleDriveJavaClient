@@ -44,7 +44,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
             fileSystem = (FileSystem) in.readObject();
             fileSystem.setBasePath(trackedPath);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Failed to read filesystem", e);
         }
     }
 
@@ -78,7 +78,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
                 }
             });
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to initialize filesystem");
+            throw new IllegalStateException("Failed to initialize filesystem", e);
         }
     }
 }
