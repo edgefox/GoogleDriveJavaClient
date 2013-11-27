@@ -22,7 +22,7 @@ import java.util.concurrent.ThreadFactory;
  */
 @Singleton
 public class Main extends AbstractModule {
-    private static final Logger logger = Logger.getLogger(Main.class);    
+    private static final Logger logger = Logger.getLogger(Main.class);
     @Inject
     private Application application;
 
@@ -46,10 +46,10 @@ public class Main extends AbstractModule {
         return configManager;
     }
 
-    private ScheduledExecutorService initApplicationThreadPool() {        
+    private ScheduledExecutorService initApplicationThreadPool() {
         ThreadFactory threadFactory = new BasicThreadFactory.Builder().namingPattern("Service - %d")
-                                                                      .daemon(false)
-                                                                      .build();
+                .daemon(false)
+                .build();
         return Executors.newScheduledThreadPool(3, threadFactory);
     }
 
@@ -58,14 +58,10 @@ public class Main extends AbstractModule {
         Names.bindProperties(binder, appProperties);
     }
 
-    public static void main(String[] args) {
-        try {
-            Main main = new Main();
-            Injector injector = Guice.createInjector(main);
-            injector.injectMembers(main);
-            System.out.println("Application is up and active.");
-        } catch (Exception e) {
-            logger.error(e);
-        }
+    public static void main(String[] args) throws Exception{
+        Main main = new Main();
+        Injector injector = Guice.createInjector(main);
+        injector.injectMembers(main);
+        System.out.println("Application is up and active.");
     }
 }

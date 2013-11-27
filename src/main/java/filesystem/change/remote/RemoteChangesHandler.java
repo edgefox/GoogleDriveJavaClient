@@ -63,7 +63,7 @@ public class RemoteChangesHandler {
             } else {
                 handleExistingEntry(change, imageFile);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warn(String.format("Failed to apply change: %s", change), e);
             success = false;
             if (triesLeft == 0) {
