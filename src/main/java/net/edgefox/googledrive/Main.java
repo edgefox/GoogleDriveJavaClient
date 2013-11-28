@@ -62,9 +62,14 @@ public class Main extends AbstractModule {
     }
 
     public static void main(String[] args) throws Exception{
-        Main main = new Main();
-        Injector injector = Guice.createInjector(main);
-        injector.injectMembers(main);
-        Notifier.showMessage("System notification", "Application is up and active.");
+        try {
+            Main main = new Main();
+            Injector injector = Guice.createInjector(main);
+            injector.injectMembers(main);
+            Notifier.showMessage("System notification", "Application is up and active.");
+        } catch (Exception e) {
+            logger.error("Application crashed", e);
+            throw e;
+        }
     }
 }

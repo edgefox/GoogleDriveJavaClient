@@ -3,11 +3,9 @@ package net.edgefox.googledrive.config;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
@@ -18,7 +16,12 @@ import java.util.Properties;
  */
 @Singleton
 public class ConfigurationManager {
-    private static final String DEFAULT_CONFIG_PATH = "application.properties";
+    private static final String DEFAULT_CONFIG_PATH = String.format("%s%s%s%s%s",
+                                                                    System.getProperty("user.home"), 
+                                                                    File.separator,
+                                                                    ".googledrive",
+                                                                    File.separator,
+                                                                    "application.properties");
     private String configPath;
     private Properties appProperties;
 
@@ -33,9 +36,12 @@ public class ConfigurationManager {
     private void init(String configPath) throws IOException {
         if (StringUtils.isEmpty(configPath)) {
             this.configPath = DEFAULT_CONFIG_PATH;
-            if (!Files.exists(Paths.get(DEFAULT_CONFIG_PATH))) {
-                InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(DEFAULT_CONFIG_PATH);
-                Files.copy(in, Paths.get(DEFAULT_CONFIG_PATH));
+            Path defaultPath = Paths.get(DEFAULT_CONFIG_PATH);
+            if (!Files.exists(defaultPath)) {
+                Files.createDirectories(defaultPath.getParent());
+                InputStream in = Thread.currentThread().getContextClassLoader().
+                                                        getResourceAsStream(defaultPath.getFileName().toString());
+                Files.copy(in, defaultPath);
             }
         } else {
             this.configPath = configPath;

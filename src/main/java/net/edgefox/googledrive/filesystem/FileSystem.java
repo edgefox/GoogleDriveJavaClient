@@ -25,13 +25,19 @@ public class FileSystem implements Serializable {
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
     private volatile Long fileSystemRevision = 0L;
     private transient Path basePath;
+    private static final String DB_FILE_PATH = String.format("%s%s%s%s%s",
+                                                             System.getProperty("user.home"),
+                                                             File.separator,
+                                                             ".googledrive",
+                                                             File.separator,
+                                                             "data.db");
 
     FileSystem(Path basePath) {
         this.basePath = basePath;
         trie = new Trie<>();
-        trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID, 
-                                       GoogleDriveService.ROOT_DIR_ID, 
-                                       true, 
+        trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID,
+                                       GoogleDriveService.ROOT_DIR_ID,
+                                       true,
                                        null));
     }
 
@@ -85,7 +91,7 @@ public class FileSystem implements Serializable {
     }
 
     private void persistFileSystem() throws IOException {
-        File database = new File("data.db");
+        File database = new File(DB_FILE_PATH);
         database.delete();
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(database))) {
             objectOutputStream.writeObject(this);
@@ -114,7 +120,7 @@ public class FileSystem implements Serializable {
             lock.writeLock().unlock();
         }
     }
-    
+
     public void move(Trie<String, FileMetadata> source, Trie<String, FileMetadata> dest) {
         lock.writeLock().lock();
         try {
@@ -125,7 +131,7 @@ public class FileSystem implements Serializable {
         }
     }
 
-    public Trie<String, FileMetadata> get(Path path) {        
+    public Trie<String, FileMetadata> get(Path path) {
         lock.readLock().lock();
         try {
             if (path.toFile().getName().isEmpty()) {
@@ -139,7 +145,7 @@ public class FileSystem implements Serializable {
                     return null;
                 }
             }
-    
+
             return current;
         } finally {
             lock.readLock().unlock();
@@ -157,14 +163,14 @@ public class FileSystem implements Serializable {
             lock.readLock().unlock();
         }
     }
-    
+
     public Path getFullPath(Trie<String, FileMetadata> entry) {
         return basePath.resolve(getPath(entry));
     }
-    
+
     public Path getPath(Trie<String, FileMetadata> entry) {
         if (entry.getParent() == null) return Paths.get("");
-        
+
         return getPath(entry.getParent()).resolve(entry.getKey());
     }
 }
