@@ -7,6 +7,7 @@ import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.change.ChangesApplier;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;
+import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import net.edgefox.googledrive.service.GoogleDriveService;
@@ -58,7 +59,7 @@ public class Application {
             System.out.println(String.format("Please follow the url to authorize the application: '%s'", authUrl));
             String newRefreshToken = googleDriveService.handleRedirect();
             configurationManager.updateProperties("REFRESH_TOKEN", newRefreshToken);
-            System.out.println("Authorization succeeded. Starting application...");
+            Notifier.showMessage("System Notification", "Authorization succeeded. Starting application...");
         }
     }
 

@@ -6,6 +6,7 @@ import net.edgefox.googledrive.config.ConfigurationManager;
 import net.edgefox.googledrive.config.TrackedPathProvider;
 import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.FileSystemProvider;
+import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.log4j.Logger;
 
@@ -64,6 +65,6 @@ public class Main extends AbstractModule {
         Main main = new Main();
         Injector injector = Guice.createInjector(main);
         injector.injectMembers(main);
-        System.out.println("Application is up and active.");
+        Notifier.showMessage("System notification", "Application is up and active.");
     }
 }

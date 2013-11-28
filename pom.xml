@@ -124,6 +124,12 @@
             <scope>test</scope>
         </dependency>
         <!-- /Testing -->
+
+        <dependency>
+            <groupId>ch.swingfx</groupId>
+            <artifactId>twinkle</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <repositories>
@@ -132,6 +138,10 @@
             <name>Sonatype snapshot repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
             <layout>default</layout>
+        </repository>
+        <repository>
+            <id>aparsons-github</id>
+            <url>https://github.com/aparsons/maven-repository/raw/master</url>
         </repository>
     </repositories>
     

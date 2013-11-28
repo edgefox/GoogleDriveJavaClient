@@ -6,6 +6,7 @@ import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
+import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import net.edgefox.googledrive.service.GoogleDriveService;
@@ -119,6 +120,8 @@ public class RemoteChangesHandler {
         Path newDirectoryPath = Paths.get(directory.getAbsolutePath());
         fileSystem.update(trackedPath.relativize(newDirectoryPath), fileMetadata);
         handledPaths.add(newDirectoryPath);
+        Notifier.showMessage("Remote update", 
+                             String.format("Added new directory %s", newDirectoryPath.toString()));
     }
 
     void moveLocalFile(FileSystemChange<String> change,
@@ -132,6 +135,8 @@ public class RemoteChangesHandler {
         }
         fileSystem.move(imageFile, parentImageFile);
         handledPaths.add(destination);
+        Notifier.showMessage("Remote update",
+                             String.format("Moved %s to %s", source, destination));
         if (change.isDir()) {
             Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(change.getId());
             for (String childId : allChildrenIds) {
@@ -148,12 +153,16 @@ public class RemoteChangesHandler {
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         imageFile.setModel(fileMetadata);
         handledPaths.add(Paths.get(localFile.toURI()));
+        Notifier.showMessage("Remote update",
+                             String.format("Updated file %s", localFile.getAbsolutePath()));
     }
 
     void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) {
         localFile.delete();
         fileSystem.delete(imageFile);
         handledPaths.add(Paths.get(localFile.toURI()));
+        Notifier.showMessage("Remote update",
+                             String.format("Deleted file %s", localFile.getAbsolutePath()));
     }
 
     void downloadNewFile(FileSystemChange<String> change) throws InterruptedException, IOException {
@@ -169,6 +178,8 @@ public class RemoteChangesHandler {
         Path newFilePath = Paths.get(localFile.toURI());
         fileSystem.update(trackedPath.relativize(newFilePath), fileMetadata);
         handledPaths.add(newFilePath);
+        Notifier.showMessage("Remote update",
+                             String.format("Added new file %s", localFile.getAbsolutePath()));
     }
 
     private Path convertRemoteIdToLocal(String id) {
