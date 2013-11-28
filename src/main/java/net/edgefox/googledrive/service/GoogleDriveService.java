@@ -255,7 +255,8 @@ public class GoogleDriveService {
     private GenericUrl getGenericUrl(File file) {
         String downloadUrl = null;
         if (file.getMimeType().equals("application/vnd.google-apps.document") || 
-            file.getMimeType().equals("application/vnd.google-apps.spreadsheet")) {
+            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
+            file.getMimeType().equals("application/vnd.google-apps.presentation")) {
             downloadUrl = file.getExportLinks().get("application/pdf");
         } else {
             downloadUrl = file.getDownloadUrl();
