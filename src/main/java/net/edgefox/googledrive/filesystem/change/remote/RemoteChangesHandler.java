@@ -134,6 +134,7 @@ public class RemoteChangesHandler {
             imageFile.setKey(change.getTitle());
         }
         fileSystem.move(imageFile, parentImageFile);
+        handledPaths.add(source);
         handledPaths.add(destination);
         Notifier.showMessage("Remote update",
                              String.format("Moved %s to %s", source, destination));
