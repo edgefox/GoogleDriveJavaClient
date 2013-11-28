@@ -6,7 +6,6 @@ package net.edgefox.googledrive.service.util;
  * Time: 8:01 PM
  */
 public enum RestrictedMimeTypes {    
-    DOCUMENT("application/vnd.google-apps.document"),
     DRAWING("application/vnd.google-apps.drawing"),
     SCRIPT("application/vnd.google-apps.script"),
     SITES("application/vnd.google-apps.sites"),

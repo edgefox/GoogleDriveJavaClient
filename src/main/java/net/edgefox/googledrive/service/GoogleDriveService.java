@@ -66,7 +66,7 @@ public class GoogleDriveService {
 
     private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title)";
     private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title";
-    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl";
+    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks";
 
     private static final String DELTA_FIELDS_ALL_INFO = "items(deleted,file,fileId),largestChangeId,nextPageToken";
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
@@ -228,7 +228,7 @@ public class GoogleDriveService {
         logger.trace(String.format("Trying to download remote file with id '%s' to %s", id, localFile));
         Drive.Files.Get get = apiClient.files().get(id).setFields(FILE_DOWNLOAD_FIELDS);
         File file = (File) safeExecute(get);
-        GenericUrl downloadUrl = new GenericUrl(file.getDownloadUrl());
+        GenericUrl downloadUrl = getGenericUrl(file);
 
         InputStream inputStream = null;
         FileOutputStream outputStream = null;
@@ -250,6 +250,17 @@ public class GoogleDriveService {
         logger.trace(String.format("File has been successfully downloaded: %s", localFile));
 
         return new FileMetadata(file);
+    }
+
+    private GenericUrl getGenericUrl(File file) {
+        String downloadUrl = null;
+        if (file.getMimeType().equals("application/vnd.google-apps.document") || 
+            file.getMimeType().equals("application/vnd.google-apps.spreadsheet")) {
+            downloadUrl = file.getExportLinks().get("application/pdf");
+        } else {
+            downloadUrl = file.getDownloadUrl();
+        }
+        return new GenericUrl(downloadUrl);
     }
 
     public RemoteChangePackage getChanges(long revisionNumber) throws IOException {
@@ -285,7 +296,7 @@ public class GoogleDriveService {
 
     private String getParentId(Change change) {
         String parentId = null;
-        if (change.getDeleted()) {
+        if (change.getDeleted() || change.getFile().getLabels().getTrashed()) {
             return parentId;
         }
 
