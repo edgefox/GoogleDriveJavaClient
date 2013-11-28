@@ -19,7 +19,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>Main</mainClass>
+                            <mainClass>net.edgefox.googledrive.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
