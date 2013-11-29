@@ -233,9 +233,7 @@ public class GoogleDriveService {
         InputStream inputStream = null;
         FileOutputStream outputStream = null;
         try {
-            HttpResponse resp = apiClient.getRequestFactory()
-                    .buildGetRequest(downloadUrl)
-                    .execute();
+            HttpResponse resp = safeDownload(downloadUrl);
             inputStream = resp.getContent();
 
             FileUtils.forceMkdir(localFile.getParentFile());
@@ -250,18 +248,6 @@ public class GoogleDriveService {
         logger.trace(String.format("File has been successfully downloaded: %s", localFile));
 
         return new FileMetadata(file);
-    }
-
-    private GenericUrl getGenericUrl(File file) {
-        String downloadUrl = null;
-        if (file.getMimeType().equals("application/vnd.google-apps.document") || 
-            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
-            file.getMimeType().equals("application/vnd.google-apps.presentation")) {
-            downloadUrl = file.getExportLinks().get("application/pdf");
-        } else {
-            downloadUrl = file.getDownloadUrl();
-        }
-        return new GenericUrl(downloadUrl);
     }
 
     public RemoteChangePackage getChanges(long revisionNumber) throws IOException {
@@ -333,5 +319,43 @@ public class GoogleDriveService {
         }
 
         return result;
+    }
+
+    private HttpResponse safeDownload(GenericUrl downloadUrl) throws IOException {
+        long timeout = 0;
+        HttpResponse response = null;
+        while (response == null && timeout < MAX_TIMEOUT) {
+            try {
+                response = apiClient.getRequestFactory()
+                        .buildGetRequest(downloadUrl)
+                        .execute();
+            } catch (SocketTimeoutException | GoogleJsonResponseException e) {
+                try {
+                    timeout += TIMEOUT_STEP;
+                    logger.warn(String.format("Request timeout. Retrying in %d seconds", timeout), e);
+                    TimeUnit.SECONDS.sleep(timeout);
+                } catch (InterruptedException e1) {
+                    logger.warn("Request execution was interrupted", e1);
+                }
+            }
+        }
+
+        if (response == null) {
+            throw new IOException("Connection timeout");
+        }
+
+        return response;
+    }
+
+    private GenericUrl getGenericUrl(File file) {
+        String downloadUrl;
+        if (file.getMimeType().equals("application/vnd.google-apps.document") ||
+                file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
+                file.getMimeType().equals("application/vnd.google-apps.presentation")) {
+            downloadUrl = file.getExportLinks().get("application/pdf");
+        } else {
+            downloadUrl = file.getDownloadUrl();
+        }
+        return new GenericUrl(downloadUrl);
     }
 }

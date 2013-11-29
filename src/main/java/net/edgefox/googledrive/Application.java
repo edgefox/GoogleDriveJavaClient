@@ -11,6 +11,7 @@ import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import net.edgefox.googledrive.service.GoogleDriveService;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.List;
  */
 @Singleton
 public class Application {
+    private static final Logger logger = Logger.getLogger(Application.class);
     @Inject
     private Path trackedPath;
     @Inject    
@@ -64,6 +66,8 @@ public class Application {
     }
 
     private void reflectRemoteStorage(String id, String path) throws IOException, InterruptedException {
+        Notifier.showMessage("System Notification", 
+                             "Trying to reflect remote storage locally...");
         List<FileMetadata> root = googleDriveService.listDirectory(id);
         for (FileMetadata fileMetadata : root) {
             File file = new File(path, fileMetadata.getTitle());
@@ -77,5 +81,7 @@ public class Application {
                 fileSystem.update(imagePath, fileMetadata);
             }
         }
+        Notifier.showMessage("System Notification", 
+                             "Remote storage has been successfully reflected locally");
     }
 }
