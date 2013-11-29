@@ -48,7 +48,11 @@ public class Application {
         prepareGoogleDriveAuth();
 
         if (fileSystem.getFileSystemRevision() == 0) {
+            Notifier.showMessage("System Notification",
+                                 "Trying to reflect remote storage locally...");
             reflectRemoteStorage(GoogleDriveService.ROOT_DIR_ID, trackedPath.toString());
+            Notifier.showMessage("System Notification",
+                                 "Remote storage has been successfully reflected locally");
         }
         remoteChangesWatcher.start();
         localChangesWatcher.start();
@@ -66,8 +70,6 @@ public class Application {
     }
 
     private void reflectRemoteStorage(String id, String path) throws IOException, InterruptedException {
-        Notifier.showMessage("System Notification", 
-                             "Trying to reflect remote storage locally...");
         List<FileMetadata> root = googleDriveService.listDirectory(id);
         for (FileMetadata fileMetadata : root) {
             File file = new File(path, fileMetadata.getTitle());
@@ -81,7 +83,5 @@ public class Application {
                 fileSystem.update(imagePath, fileMetadata);
             }
         }
-        Notifier.showMessage("System Notification", 
-                             "Remote storage has been successfully reflected locally");
     }
 }
