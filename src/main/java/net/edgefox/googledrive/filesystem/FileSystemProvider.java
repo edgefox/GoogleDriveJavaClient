@@ -29,7 +29,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
 
     public net.edgefox.googledrive.filesystem.FileSystem get() {
         if (fileSystem == null) {
-            if (!new File("data.db").exists()) {
+            if (!new File(FileSystem.DB_FILE_PATH).exists()) {
                 createNewFileSystem();
             } else {
                 readFileSystem();
@@ -40,7 +40,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
     }
 
     private void readFileSystem() {
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("data.db"))) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FileSystem.DB_FILE_PATH))) {
             fileSystem = (FileSystem) in.readObject();
             fileSystem.setBasePath(trackedPath);
         } catch (Exception e) {

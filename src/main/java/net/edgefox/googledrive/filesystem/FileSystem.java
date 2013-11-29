@@ -25,7 +25,7 @@ public class FileSystem implements Serializable {
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
     private volatile Long fileSystemRevision = 0L;
     private transient Path basePath;
-    private static final String DB_FILE_PATH = String.format("%s%s%s%s%s",
+    public static final String DB_FILE_PATH = String.format("%s%s%s%s%s",
                                                              System.getProperty("user.home"),
                                                              File.separator,
                                                              ".googledrive",
