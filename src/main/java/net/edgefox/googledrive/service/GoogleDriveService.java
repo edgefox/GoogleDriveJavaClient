@@ -265,7 +265,7 @@ public class GoogleDriveService {
     }
 
     public RemoteChangePackage getChanges(long revisionNumber) throws IOException {
-        List<FileSystemChange<String>> resultChanges = new ArrayList<>();
+        Set<FileSystemChange<String>> resultChanges = new LinkedHashSet<>();
         Drive.Changes.List request = apiClient.changes().list().setFields(DELTA_FIELDS_ALL_INFO);
         request.setStartChangeId(++revisionNumber);
         do {

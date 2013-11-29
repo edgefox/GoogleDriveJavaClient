@@ -1,6 +1,6 @@
 package net.edgefox.googledrive.filesystem.change;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * User: Ivan Lyutov
@@ -9,9 +9,9 @@ import java.util.List;
  */
 public class RemoteChangePackage {
     private long revisionNumber;
-    private volatile List<FileSystemChange<String>> changes;
+    private volatile Set<FileSystemChange<String>> changes;
 
-    public RemoteChangePackage(long revisionNumber, List<FileSystemChange<String>> changes) {
+    public RemoteChangePackage(long revisionNumber, Set<FileSystemChange<String>> changes) {
         this.revisionNumber = revisionNumber;
         this.changes = changes;
     }
@@ -20,7 +20,7 @@ public class RemoteChangePackage {
         return revisionNumber;
     }
 
-    public List<FileSystemChange<String>> getChanges() {
+    public Set<FileSystemChange<String>> getChanges() {
         return changes;
     }
 }
