@@ -6,6 +6,7 @@ import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;
+import net.edgefox.googledrive.util.Notifier;
 import org.apache.log4j.Logger;
 import net.edgefox.googledrive.service.GoogleDriveService;
 
@@ -106,12 +107,14 @@ public class LocalChangesHandler {
         FileMetadata fileMetadata = googleDriveService.createOrGetDirectory(parentId, change.getTitle());
         fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
         handledIds.add(fileMetadata.getId());
+        Notifier.showMessage("Local update", String.format("Created directory %s", change.getId()));
     }
 
     void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
         googleDriveService.delete(imageFile.getModel().getId());
         fileSystem.delete(imageFile);
         handledIds.add(imageFile.getModel().getId());
+        Notifier.showMessage("Local update", String.format("Deleted %s", fileSystem.getFullPath(imageFile)));
     }
 
     void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
@@ -125,5 +128,6 @@ public class LocalChangesHandler {
                                                               change.getId().toFile());
         fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
         handledIds.add(fileMetadata.getId());
+        Notifier.showMessage("Local update", String.format("File update %s", change.getId()));
     }
 }
