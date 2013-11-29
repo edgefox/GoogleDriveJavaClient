@@ -27,7 +27,7 @@ public class Notifier {
                 .withMessage(message)
                 .withIcon(new ImageIcon(Notifier.class.getResource("/drive-icon.png")))
                 .withDisplayTime(5000)
-                .withPosition(Positions.NORTH)
+                .withPosition(Positions.NORTH_EAST)
                 .showNotification();
 
     }
