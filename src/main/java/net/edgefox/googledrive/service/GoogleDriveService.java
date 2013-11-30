@@ -64,9 +64,9 @@ public class GoogleDriveService {
     private String REFRESH_TOKEN;
     private GoogleAuthorizationCodeFlow authFlow;
 
-    private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title)";
-    private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title";
-    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks";
+    private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum)";
+    private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title,md5Checksum";
+    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks,md5Checksum";
 
     private static final String DELTA_FIELDS_ALL_INFO = "items(deleted,file,fileId),largestChangeId,nextPageToken";
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
@@ -263,7 +263,7 @@ public class GoogleDriveService {
                 FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
                                                                                    getParentId(change),
                                                                                    title,
-                                                                                   isDir);
+                                                                                   isDir, null);
                 resultChanges.add(fileSystemChange);
             }
             request.setPageToken(changes.getNextPageToken());
