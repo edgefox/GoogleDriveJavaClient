@@ -1,7 +1,9 @@
 package net.edgefox.googledrive.filesystem;
 
+import net.edgefox.googledrive.config.ConfigurationManager;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,10 +21,12 @@ import static junit.framework.Assert.assertNull;
 public class FileSystemTest {
     private FileSystem fileSystem;
     private Path basePath = Paths.get("/tmp/GoogleDrive");
+    @Mock
+    private ConfigurationManager configurationManager;
 
     @Before
     public void setUp() throws Exception {
-        fileSystem = new FileSystem(basePath);
+        fileSystem = new FileSystem(basePath, configurationManager);
     }
 
     @Test
