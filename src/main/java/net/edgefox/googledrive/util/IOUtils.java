@@ -46,7 +46,7 @@ public class IOUtils {
         }
     }
     
-    public static String getFileMd5CheckSum(Path path) throws NoSuchAlgorithmException, IOException {
+    public static String getFileMd5CheckSum(Path path) throws IOException {
         byte[] digestBytes = DigestUtils.md5(Files.readAllBytes(path));
         StringBuilder sb = new StringBuilder("");
         for (byte digestByte : digestBytes) {

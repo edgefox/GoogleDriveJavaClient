@@ -2,7 +2,7 @@ package net.edgefox.googledrive.filesystem;
 
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import org.apache.commons.codec.digest.DigestUtils;
+import net.edgefox.googledrive.util.IOUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
 
 /**
  * User: Ivan Lyutov
@@ -35,7 +34,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
                 readFileSystem();
             }
         }
-        
+
         return fileSystem;
     }
 
@@ -63,16 +62,17 @@ public class FileSystemProvider implements Provider<FileSystem> {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
-                    
+
                     fileSystem.update(trackedPath.relativize(file), getPathMetadata(file, attrs));
                     return FileVisitResult.CONTINUE;
                 }
 
-                FileMetadata getPathMetadata(Path path, BasicFileAttributes attrs) {
+                FileMetadata getPathMetadata(Path path, BasicFileAttributes attrs) throws IOException {
                     String id = null;
                     String title = path.getFileName().toString();
                     boolean isDir = attrs.isDirectory();
-                    String checkSum = Arrays.toString(DigestUtils.md5(path.toString()));
+                    String checkSum;
+                    checkSum = IOUtils.getFileMd5CheckSum(path);
 
                     return new FileMetadata(id, title, isDir, checkSum);
                 }

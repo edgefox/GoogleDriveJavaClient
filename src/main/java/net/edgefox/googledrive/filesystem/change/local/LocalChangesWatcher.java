@@ -2,6 +2,7 @@ package net.edgefox.googledrive.filesystem.change.local;
 
 import net.edgefox.googledrive.filesystem.change.ChangesWatcher;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
+import net.edgefox.googledrive.util.IOUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -9,6 +10,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,14 +102,14 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     Files.isHidden(child)) {
                     return;
                 }
+                String md5CheckSum = IOUtils.getFileMd5CheckSum(child);
+                changes.add(new FileSystemChange<>(child,
+                                                   kind == ENTRY_DELETE ? null : child.getParent(),
+                                                   child.getFileName().toString(),
+                                                   child.toFile().isDirectory(), md5CheckSum));
             } catch (IOException e) {
                 logger.error(String.format("Unable to handle event: %s", event), e);
             }
-
-            changes.add(new FileSystemChange<>(child,
-                                               kind == ENTRY_DELETE ? null : child.getParent(),
-                                               child.getFileName().toString(),
-                                               child.toFile().isDirectory(), null));
 
             if (kind == ENTRY_CREATE) {
                 try {
@@ -138,10 +140,12 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
 
+                    String md5CheckSum = IOUtils.getFileMd5CheckSum(file);
                     changes.add(new FileSystemChange<>(file,
                                                        file.getParent(),
                                                        file.getFileName().toString(),
-                                                       false, null));
+                                                       false, 
+                                                       md5CheckSum));
                     return FileVisitResult.CONTINUE;
                 }
             });

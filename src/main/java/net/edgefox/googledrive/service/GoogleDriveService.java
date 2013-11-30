@@ -260,10 +260,12 @@ public class GoogleDriveService {
             for (Change change : changes.getItems()) {
                 String title = change.getDeleted() ? null : change.getFile().getTitle();
                 boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
+                String md5CheckSum = change.getDeleted() ? null : change.getFile().getMd5Checksum();
                 FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
                                                                                    getParentId(change),
                                                                                    title,
-                                                                                   isDir, null);
+                                                                                   isDir, 
+                                                                                   md5CheckSum);
                 resultChanges.add(fileSystemChange);
             }
             request.setPageToken(changes.getNextPageToken());
