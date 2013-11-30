@@ -107,7 +107,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
             changes.add(new FileSystemChange<>(child,
                                                kind == ENTRY_DELETE ? null : child.getParent(),
                                                child.getFileName().toString(),
-                                               child.toFile().isDirectory()));
+                                               child.toFile().isDirectory(), null));
 
             if (kind == ENTRY_CREATE) {
                 try {
@@ -129,7 +129,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     changes.add(new FileSystemChange<>(dir,
                                                        dir.getParent(),
                                                        dir.getFileName().toString(),
-                                                       true));
+                                                       true, null));
                     register(dir);
                     return FileVisitResult.CONTINUE;
                 }
@@ -141,7 +141,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     changes.add(new FileSystemChange<>(file,
                                                        file.getParent(),
                                                        file.getFileName().toString(),
-                                                       false));
+                                                       false, null));
                     return FileVisitResult.CONTINUE;
                 }
             });

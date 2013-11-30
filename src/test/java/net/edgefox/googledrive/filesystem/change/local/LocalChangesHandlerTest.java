@@ -68,7 +68,7 @@ public class LocalChangesHandlerTest {
         directoryChange = new FileSystemChange<>(directoryPath,
                                                  trackedPath,
                                                  directoryPath.getFileName().toString(),
-                                                 true);
+                                                 true, null);
         directoryImage = new Trie<>(directoryPath.getFileName().toString(),
                                     new FileMetadata(UUID.randomUUID().toString(),
                                                      directoryPath.getFileName().toString(),
@@ -79,7 +79,7 @@ public class LocalChangesHandlerTest {
         fileChange = new FileSystemChange<>(filePath,
                                             trackedPath,
                                             filePath.getFileName().toString(),
-                                            false);
+                                            false, null);
         fileImage = new Trie<>(filePath.getFileName().toString(),
                                new FileMetadata(UUID.randomUUID().toString(),
                                                 filePath.getFileName().toString(),
@@ -90,7 +90,7 @@ public class LocalChangesHandlerTest {
         deletedChange = new FileSystemChange<>(deletedPath,
                                                null,
                                                deletedPath.getFileName().toString(),
-                                               false);
+                                               false, null);
         deletedImage = new Trie<>(deletedPath.getFileName().toString(),
                                   new FileMetadata(UUID.randomUUID().toString(),
                                                    deletedPath.getFileName().toString(),

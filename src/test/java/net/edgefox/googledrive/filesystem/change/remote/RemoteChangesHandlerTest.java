@@ -51,19 +51,19 @@ public class RemoteChangesHandlerTest {
     private FileSystemChange<String> directoryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                               GoogleDriveService.ROOT_DIR_ID,
                                                                               UUID.randomUUID().toString(),
-                                                                              true);
+                                                                              true, null);
     private FileSystemChange<String> fileChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                          GoogleDriveService.ROOT_DIR_ID,
                                                                          UUID.randomUUID().toString(),
-                                                                         false);
+                                                                         false, null);
     private FileSystemChange<String> deletedEntryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                                  null,
                                                                                  UUID.randomUUID().toString(),
-                                                                                 false);
+                                                                                 false, null);
     private FileSystemChange<String> movedChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                           directoryChange.getId(),
                                                                           UUID.randomUUID().toString(),
-                                                                          true);
+                                                                          true, null);
     private Trie<String, FileMetadata> rootTrie;
 
     @Before

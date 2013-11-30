@@ -10,12 +10,14 @@ public class FileSystemChange<T> {
     private T parentId;
     private String title;
     private boolean dir;
+    private String md5CheckSum;
 
-    public FileSystemChange(T id, T parentId, String title, boolean dir) {
+    public FileSystemChange(T id, T parentId, String title, boolean dir, String md5CheckSum) {
         this.id = id;
         this.parentId = parentId;
         this.title = title;
         this.dir = dir;
+        this.md5CheckSum = md5CheckSum;
     }
 
     public T getId() {
@@ -36,6 +38,10 @@ public class FileSystemChange<T> {
 
     public boolean isRemoved() {
         return parentId == null;
+    }
+
+    public String getMd5CheckSum() {
+        return md5CheckSum;
     }
 
     @Override

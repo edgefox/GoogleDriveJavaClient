@@ -42,19 +42,19 @@ public class RemoteChangesWatcherTest {
     private FileSystemChange<String> file1 = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                     GoogleDriveService.ROOT_DIR_ID,
                                                                     "file1.txt",
-                                                                    false);
+                                                                    false, null);
     private FileSystemChange<String> file2 = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                     GoogleDriveService.ROOT_DIR_ID,
                                                                     "file2.txt",
-                                                                    false);
+                                                                    false, null);
     private FileSystemChange<String> directory = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                         GoogleDriveService.ROOT_DIR_ID,
                                                                         "directory",
-                                                                        true);
+                                                                        true, null);
     private FileSystemChange<String> file3 = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                     directory.getParentId(),
                                                                     "file3.txt",
-                                                                    false);
+                                                                    false, null);
 
     @Before
     public void setUp() throws Exception {
