@@ -158,16 +158,18 @@ public class RemoteChangesHandler {
     }
 
     void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) throws IOException {
-        FileUtils.forceDelete(localFile);
-        fileSystem.delete(imageFile);        
-        Notifier.showMessage("Remote update",
-                             String.format("Deleted file %s", localFile.getAbsolutePath()));
-        handledPaths.add(Paths.get(localFile.toURI()));
-        if (imageFile.getModel().isDir()) {
-            Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(imageFile.getModel().getId());
-            for (String childId : allChildrenIds) {
-                Path path = fileSystem.getFullPath(fileSystem.get(childId));
-                handledPaths.add(path);
+        if (localFile.exists()) {
+            FileUtils.forceDelete(localFile);
+            fileSystem.delete(imageFile);        
+            Notifier.showMessage("Remote update",
+                                 String.format("Deleted file %s", localFile.getAbsolutePath()));
+            handledPaths.add(Paths.get(localFile.toURI()));
+            if (imageFile.getModel().isDir()) {
+                Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(imageFile.getModel().getId());
+                for (String childId : allChildrenIds) {
+                    Path path = fileSystem.getFullPath(fileSystem.get(childId));
+                    handledPaths.add(path);
+                }
             }
         }
     }
