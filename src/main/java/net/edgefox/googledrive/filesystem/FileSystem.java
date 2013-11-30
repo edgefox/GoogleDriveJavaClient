@@ -39,6 +39,10 @@ public class FileSystem implements Serializable {
         this.configurationManager = configurationManager;
     }
 
+    public void addRemoteId(String id, Trie<String, FileMetadata> trie) {
+        idToTrie.put(id, trie);
+    }
+    
     public long getFileSystemRevision() {
         return Long.parseLong(configurationManager.getProperty("REVISION_NUMBER"));
     }

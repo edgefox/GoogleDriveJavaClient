@@ -82,6 +82,7 @@ public class Application {
                 Trie<String,FileMetadata> imageFile = fileSystem.get(imagePath);
                 localMetadata = imageFile.getModel();
                 imageFile.setModel(remoteMetadata);
+                fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
             }
 
             if (remoteMetadata.isDir()) {
