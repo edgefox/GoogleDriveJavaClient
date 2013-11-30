@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -70,7 +72,12 @@ public class Application {
     }
 
     private void initStorage(String id, String path) throws IOException, InterruptedException {
-        List<FileMetadata> root = googleDriveService.listDirectory(id);
+        List<FileMetadata> root = googleDriveService.listDirectory(id); 
+        File[] files = new File(path).listFiles();
+        List<File> localFiles = new ArrayList<>();
+        if (files != null) {
+            localFiles.addAll(Arrays.asList(files));
+        }
         for (FileMetadata remoteMetadata : root) {
             File file = new File(path, remoteMetadata.getTitle());
             Path imagePath = trackedPath.relativize(Paths.get(file.getAbsolutePath()));
@@ -95,6 +102,16 @@ public class Application {
                        !localMetadata.getCheckSum().equals(remoteMetadata.getCheckSum())) {
                 googleDriveService.downloadFile(remoteMetadata.getId(), file);
             }
+            localFiles.remove(file);
         }
+
+        for (File file : localFiles) {
+            if (file.isDirectory()) {
+                googleDriveService.createOrGetDirectory(id, file.getName());                
+            } else {
+                googleDriveService.upload(id, file);
+            }
+        }
+
     }
 }
