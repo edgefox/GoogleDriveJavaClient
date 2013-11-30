@@ -144,7 +144,6 @@ public class RemoteChangesHandler {
                 Path path = fileSystem.getFullPath(fileSystem.get(childId));
                 handledPaths.add(path);
             }
-
         }
     }
 
@@ -158,12 +157,19 @@ public class RemoteChangesHandler {
                              String.format("Updated file %s", localFile.getAbsolutePath()));
     }
 
-    void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) {
-        localFile.delete();
-        fileSystem.delete(imageFile);
-        handledPaths.add(Paths.get(localFile.toURI()));
+    void deleteLocalFile(Trie<String, FileMetadata> imageFile, File localFile) throws IOException {
+        FileUtils.forceDelete(localFile);
+        fileSystem.delete(imageFile);        
         Notifier.showMessage("Remote update",
                              String.format("Deleted file %s", localFile.getAbsolutePath()));
+        handledPaths.add(Paths.get(localFile.toURI()));
+        if (imageFile.getModel().isDir()) {
+            Set<String> allChildrenIds = googleDriveService.getAllChildrenIds(imageFile.getModel().getId());
+            for (String childId : allChildrenIds) {
+                Path path = fileSystem.getFullPath(fileSystem.get(childId));
+                handledPaths.add(path);
+            }
+        }
     }
 
     void downloadNewFile(FileSystemChange<String> change) throws InterruptedException, IOException {
