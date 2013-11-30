@@ -96,7 +96,8 @@ public class RemoteChangesHandler {
             deleteLocalFile(imageFile, localFile);
         } else if (isMoved(change, imageFile)) {
             moveLocalFile(change, imageFile);
-        } else if (!change.isDir()) {
+        } else if (!change.isDir() && 
+                   !change.getMd5CheckSum().equals(imageFile.getModel().getCheckSum())) { 
             updateLocalFile(change, imageFile, localFile);
         }
     }

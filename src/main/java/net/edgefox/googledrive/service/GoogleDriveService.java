@@ -24,6 +24,7 @@ import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
 import net.edgefox.googledrive.service.util.RestrictedMimeTypes;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.lf5.util.StreamUtils;
@@ -34,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -65,8 +67,8 @@ public class GoogleDriveService {
     private GoogleAuthorizationCodeFlow authFlow;
 
     private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum)";
-    private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title,md5Checksum";
-    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks,md5Checksum";
+    private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title,md5Checksum,etag";
+    private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks,md5Checksum,etag";
 
     private static final String DELTA_FIELDS_ALL_INFO = "items(deleted,file,fileId),largestChangeId,nextPageToken";
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
@@ -260,11 +262,11 @@ public class GoogleDriveService {
             for (Change change : changes.getItems()) {
                 String title = change.getDeleted() ? null : change.getFile().getTitle();
                 boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
-                String md5CheckSum = change.getDeleted() ? null : change.getFile().getMd5Checksum();
+                String md5CheckSum = getMd5CheckSum(change);
                 FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
                                                                                    getParentId(change),
                                                                                    title,
-                                                                                   isDir, 
+                                                                                   isDir,
                                                                                    md5CheckSum);
                 resultChanges.add(fileSystemChange);
             }
@@ -352,12 +354,24 @@ public class GoogleDriveService {
     private GenericUrl getGenericUrl(File file) {
         String downloadUrl;
         if (file.getMimeType().equals("application/vnd.google-apps.document") ||
-                file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
-                file.getMimeType().equals("application/vnd.google-apps.presentation")) {
+            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
+            file.getMimeType().equals("application/vnd.google-apps.presentation")) {
             downloadUrl = file.getExportLinks().get("application/pdf");
         } else {
             downloadUrl = file.getDownloadUrl();
         }
         return new GenericUrl(downloadUrl);
+    }
+
+    private String getMd5CheckSum(Change change) {
+        if (change.getDeleted()) {
+            return null;
+        } else if (change.getFile().getMimeType().equals("application/vnd.google-apps.document") ||
+                   change.getFile().getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
+                   change.getFile().getMimeType().equals("application/vnd.google-apps.presentation")) {
+            return change.getFile().getEtag();
+        } else {
+            return change.getFile().getMd5Checksum();
+        }
     }
 }
