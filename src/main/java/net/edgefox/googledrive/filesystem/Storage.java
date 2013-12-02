@@ -4,6 +4,7 @@ import com.google.inject.Singleton;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
 import net.edgefox.googledrive.service.GoogleDriveService;
+import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 
 import javax.inject.Inject;
@@ -30,11 +31,13 @@ public class Storage {
     private GoogleDriveService googleDriveService;
     
     public void checkout() throws IOException, InterruptedException {
+        Notifier.showMessage("System notification", "Trying to perform initial sync");
         Set<File> handledFiles = checkoutRemote(GoogleDriveService.ROOT_DIR_ID, trackedPath);
         if (fileSystem.getFileSystemRevision() > 0L) {
             handleDeletedRemotely();
         }
         checkoutLocal(trackedPath.toFile(), handledFiles);
+        Notifier.showMessage("System notification", "Initial sync is completed");
     }
 
     void handleDeletedRemotely() throws IOException {
