@@ -20,7 +20,7 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class Application {
-    private static final Logger logger = Logger.getLogger(Application.class);
+    private static Logger logger = Logger.getLogger(Application.class);
     @Inject
     private GoogleDriveService googleDriveService;
     @Inject

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Singleton
 public class ChangesApplier {
-    private static final Logger logger = Logger.getLogger(ChangesApplier.class);
+    private static Logger logger = Logger.getLogger(ChangesApplier.class);
     @Inject
     private LocalChangesHandler localChangesHandler;
     @Inject

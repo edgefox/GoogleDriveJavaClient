@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
  */
 @Singleton
 public class Main extends AbstractModule {
-    private static final Logger logger = Logger.getLogger(Main.class);
+    private static Logger logger = Logger.getLogger(Main.class);
     @Inject
     private Application application;
 

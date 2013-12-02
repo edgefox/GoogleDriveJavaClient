@@ -23,7 +23,7 @@ import java.util.Set;
  */
 @Singleton
 public class LocalChangesHandler {
-    private static final Logger logger = Logger.getLogger(LocalChangesHandler.class);
+    private static Logger logger = Logger.getLogger(LocalChangesHandler.class);
     private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;

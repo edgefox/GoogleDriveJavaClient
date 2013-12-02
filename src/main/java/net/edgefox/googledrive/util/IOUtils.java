@@ -22,7 +22,7 @@ import java.util.Arrays;
  * Time: 1:39 PM
  */
 public class IOUtils {
-    private static final Logger logger = Logger.getLogger(IOUtils.class);
+    private static Logger logger = Logger.getLogger(IOUtils.class);
     
     private IOUtils() {}
 

@@ -27,7 +27,7 @@ import java.util.Set;
  */
 @Singleton
 public class RemoteChangesHandler {
-    private static final Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
+    private static Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
     private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;

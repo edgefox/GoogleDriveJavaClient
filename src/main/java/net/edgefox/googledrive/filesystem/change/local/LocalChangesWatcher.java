@@ -25,7 +25,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 @Singleton
 public class LocalChangesWatcher extends ChangesWatcher<Path> {
-    private static final Logger logger = Logger.getLogger(LocalChangesWatcher.class);
+    private static Logger logger = Logger.getLogger(LocalChangesWatcher.class);
 
     private Path trackedPath;
     private WatchService watchService;

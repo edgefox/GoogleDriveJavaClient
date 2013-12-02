@@ -45,7 +45,7 @@ import static java.lang.String.format;
 public class GoogleDriveService {
     public static final String ROOT_DIR_ID = "root";
 
-    private static final Logger logger = Logger.getLogger(GoogleDriveService.class);
+    private static Logger logger = Logger.getLogger(GoogleDriveService.class);
     @Inject
     private AuthRedirectListener authRedirectListener;
     private Drive apiClient;

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Singleton
 public class RemoteChangesWatcher extends ChangesWatcher<String> {
-    private static final Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
+    private static Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
     @Inject
     private GoogleDriveService googleDriveService;
     @Inject

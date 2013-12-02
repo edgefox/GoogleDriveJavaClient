@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Ivan Lyutov
  */
 public class FileSystem implements Serializable {
-    private static final Logger logger = Logger.getLogger(FileSystem.class);
+    private static Logger logger = Logger.getLogger(FileSystem.class);
     private static final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Trie<String, FileMetadata> trie;
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
