@@ -21,6 +21,8 @@ public class GoogleDriveUtils {
     private static final String GOOGLE_SITE = "application/vnd.google-apps.sites";
     private static final String GOOGLE_FUSION_TABLE = "application/vnd.google-apps.fusiontable";
     private static final String GOOGLE_FORM = "application/vnd.google-apps.form";
+    
+    private GoogleDriveUtils() {}
 
     public static String getMd5CheckSumFromChange(Change change) {
         if (change.getDeleted()) {

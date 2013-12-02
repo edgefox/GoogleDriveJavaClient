@@ -21,8 +21,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 public class FileSystemProvider implements Provider<FileSystem> {
     @Inject
     private Path trackedPath;
-    @Inject
-    private ConfigurationManager configurationManager;
     private static FileSystem fileSystem = null;
 
     public net.edgefox.googledrive.filesystem.FileSystem get() {
@@ -57,7 +55,9 @@ public class FileSystemProvider implements Provider<FileSystem> {
             Files.walkFileTree(trackedPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (trackedPath.equals(dir) || Files.isHidden(dir)) return FileVisitResult.CONTINUE;
+                    if (trackedPath.equals(dir) || Files.isHidden(dir)) {
+                        return FileVisitResult.CONTINUE;
+                    }
 
                     result.update(trackedPath.relativize(dir), getPathMetadata(dir, attrs));
                     return FileVisitResult.CONTINUE;
@@ -65,7 +65,9 @@ public class FileSystemProvider implements Provider<FileSystem> {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
+                    if (Files.isHidden(file)) {
+                        return FileVisitResult.CONTINUE;
+                    }
 
                     result.update(trackedPath.relativize(file), getPathMetadata(file, attrs));
                     return FileVisitResult.CONTINUE;

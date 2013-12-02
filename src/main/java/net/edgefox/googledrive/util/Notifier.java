@@ -13,6 +13,8 @@ import javax.swing.*;
  * Time: 12:56 PM
  */
 public class Notifier {
+    
+    private Notifier() {}
 
     public static void showMessage(String title, String message) {
         System.setProperty("swing.aatext", "true");

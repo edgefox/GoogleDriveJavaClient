@@ -53,7 +53,9 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                if (Files.isHidden(dir)) return FileVisitResult.CONTINUE;
+                if (Files.isHidden(dir)) {
+                    return FileVisitResult.CONTINUE;
+                }
                 
                 register(dir);
                 return FileVisitResult.CONTINUE;
@@ -126,7 +128,9 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
             Files.walkFileTree(child, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (Files.isHidden(dir)) return FileVisitResult.CONTINUE;
+                    if (Files.isHidden(dir)) {
+                        return FileVisitResult.CONTINUE;
+                    }
 
                     changes.add(new FileSystemChange<>(dir,
                                                        dir.getParent(),
@@ -138,7 +142,9 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (Files.isHidden(file)) return FileVisitResult.CONTINUE;
+                    if (Files.isHidden(file)) {
+                        return FileVisitResult.CONTINUE;
+                    }
 
                     String md5CheckSum = IOUtils.getFileMd5CheckSum(file);
                     changes.add(new FileSystemChange<>(file,

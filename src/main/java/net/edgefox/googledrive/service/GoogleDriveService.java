@@ -257,7 +257,7 @@ public class GoogleDriveService {
         }
     }
 
-    public FileMetadata downloadFile(String id, java.io.File localFile) throws InterruptedException, IOException {
+    public FileMetadata downloadFile(String id, java.io.File localFile) throws IOException {
         try {
             logger.trace(format("Trying to download remote file with id '%s' to %s", id, localFile));
             Drive.Files.Get get = apiClient.files().get(id).setFields(FILE_DOWNLOAD_FIELDS);
