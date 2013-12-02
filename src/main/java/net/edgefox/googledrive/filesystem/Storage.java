@@ -42,7 +42,9 @@ public class Storage {
         for (FileSystemChange<String> change : changes.getChanges()) {
             if (change.isRemoved()) {
                 Path path = fileSystem.getPath(fileSystem.get(change.getId()));
-                FileUtils.forceDelete(path.toFile());
+                if (Files.exists(path)) {
+                    FileUtils.forceDelete(path.toFile());
+                }
                 fileSystem.delete(path);
             }
         }
