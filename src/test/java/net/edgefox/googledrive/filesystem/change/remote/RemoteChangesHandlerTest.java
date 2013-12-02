@@ -51,19 +51,19 @@ public class RemoteChangesHandlerTest {
     private FileSystemChange<String> directoryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                               GoogleDriveService.ROOT_DIR_ID,
                                                                               UUID.randomUUID().toString(),
-                                                                              true, null);
+                                                                              true, UUID.randomUUID().toString());
     private FileSystemChange<String> fileChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                          GoogleDriveService.ROOT_DIR_ID,
                                                                          UUID.randomUUID().toString(),
-                                                                         false, null);
+                                                                         false, UUID.randomUUID().toString());
     private FileSystemChange<String> deletedEntryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                                  null,
                                                                                  UUID.randomUUID().toString(),
-                                                                                 false, null);
+                                                                                 false, UUID.randomUUID().toString());
     private FileSystemChange<String> movedChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                           directoryChange.getId(),
                                                                           UUID.randomUUID().toString(),
-                                                                          true, null);
+                                                                          true, UUID.randomUUID().toString());
     private Trie<String, FileMetadata> rootTrie;
 
     @Before
@@ -142,12 +142,13 @@ public class RemoteChangesHandlerTest {
         changesToHandle.add(fileChange);
         when(remoteChangesWatcher.getChangesCopy()).thenReturn(changesToHandle);
 
-        FileMetadata fileMetadata = new FileMetadata(fileChange.getId(), fileChange.getTitle(), fileChange.isDir(), null);
+        FileMetadata remoteMetadata = new FileMetadata(fileChange.getId(), fileChange.getTitle(), fileChange.isDir(), UUID.randomUUID().toString());
+        FileMetadata fileMetadata = new FileMetadata(fileChange.getId(), fileChange.getTitle(), fileChange.isDir(), UUID.randomUUID().toString());
         Trie<String, FileMetadata> fileImage = new Trie<>(fileChange.getTitle(), fileMetadata, rootTrie);
         Path filePath = trackedPath.resolve(fileChange.getTitle());
         when(fileSystem.get(fileChange.getId())).thenReturn(fileImage);
         when(fileSystem.getFullPath(fileImage)).thenReturn(filePath);
-        when(googleDriveService.downloadFile(anyString(), any(File.class))).thenReturn(fileMetadata);
+        when(googleDriveService.downloadFile(anyString(), any(File.class))).thenReturn(remoteMetadata);
 
         remoteChangesHandler.handle();
 

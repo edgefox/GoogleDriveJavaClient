@@ -1,5 +1,6 @@
 package net.edgefox.googledrive.filesystem.change.remote;
 
+import com.google.api.services.drive.model.About;
 import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.*;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -85,7 +87,7 @@ public class RemoteChangesWatcherTest {
 
     private void initMocks() throws IOException {
         MockitoAnnotations.initMocks(this);
-        when(fileSystem.getFileSystemRevision()).thenReturn(999L);
+        when(fileSystem.getFileSystemRevision()).thenReturn(998L);
         RemoteChangePackage changePackage = new RemoteChangePackage(1000, new LinkedHashSet<FileSystemChange<String>>() {
             {
                 add(file1);
@@ -95,6 +97,7 @@ public class RemoteChangesWatcherTest {
             }
 
         });
+        when(googleDriveService.about()).thenReturn(new About().setLargestChangeId(999L));
         when(googleDriveService.getChanges(anyLong())).thenReturn(changePackage);
     }
 
