@@ -3,6 +3,11 @@ GoogleDriveJavaClient
 
 Implementation of Google Drive Client in Java
 
+It supports everything except:
+ - syncing shared files (TBD)
+ - multiple parents for file/directory (won't fix)
+ - edit feature for google docs, google spreadsheets, google presentations (won't fix)
+
 JDK: 1.7+
 OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
 
@@ -15,7 +20,7 @@ How to run:
  - authorize the application via following provided link
   
 Startup algorithm:
- - try to download all content of your google drive (if needed)
+ - try to download all content(except shared resources) of your google drive if needed
  - try to upload/create local unsynced files/dirs
  - scheduling task that will sync local and remote storage once for 15 seconds
 
