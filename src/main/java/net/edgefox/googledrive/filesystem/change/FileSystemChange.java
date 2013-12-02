@@ -1,5 +1,8 @@
 package net.edgefox.googledrive.filesystem.change;
 
+import com.google.api.services.drive.model.Change;
+import net.edgefox.googledrive.service.util.GoogleDriveUtils;
+
 /**
  * User: Ivan Lyutov
  * Date: 10/15/13
@@ -18,6 +21,15 @@ public class FileSystemChange<T> {
         this.title = title;
         this.dir = dir;
         this.md5CheckSum = md5CheckSum;
+    }
+
+    @SuppressWarnings("unchecked")
+    public FileSystemChange(Change change) {
+        id = (T) change.getId();
+        parentId = (T) GoogleDriveUtils.getParentId(change);
+        title = change.getDeleted() ? null : change.getFile().getTitle();
+        dir = GoogleDriveUtils.getIsGoogleDir(change);
+        md5CheckSum = GoogleDriveUtils.getMd5CheckSumFromChange(change);
     }
 
     public T getId() {
@@ -74,6 +86,7 @@ public class FileSystemChange<T> {
         sb.append("title='").append(title).append('\'');
         sb.append("dir='").append(dir).append('\'');
         sb.append(", removed=").append(isRemoved());
+        sb.append(", md5CheckSum=").append(md5CheckSum);
         sb.append('}');
         return sb.toString();
     }

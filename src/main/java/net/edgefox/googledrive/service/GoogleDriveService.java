@@ -20,7 +20,7 @@ import com.google.inject.name.Named;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
-import net.edgefox.googledrive.service.util.RestrictedMimeTypes;
+import net.edgefox.googledrive.service.util.GoogleDriveUtils;
 import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 
@@ -68,7 +67,7 @@ public class GoogleDriveService {
 
     private static final String DELTA_FIELDS_ALL_INFO = "items(deleted,file,fileId),largestChangeId,nextPageToken";
     private static final String DELTA_FIELDS_ONLY_ID = "largestChangeId";
-    private static long MAX_TIMEOUT = 60;
+    private static long MAX_TIMEOUT = 30;
     private static long TIMEOUT_STEP = 5;
 
     @Inject
@@ -234,24 +233,28 @@ public class GoogleDriveService {
     
             return result;
         } catch (IOException e) {
-            throw new IOException(format("Failed to get all child entries of remote folder '%s'", folderId), e);
+            throw new IOException(format("Failed to get all child entries ids of remote folder '%s'", folderId), e);
         }
     }
 
     public List<FileMetadata> listDirectory(String folderId) throws IOException {
-        Drive.Children.List list = apiClient.children().list(folderId)
-                .setQ(format("trashed = false and '%s' in parents", folderId));
-        ChildList children = (ChildList) safeExecute(list);
-        List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
-        for (ChildReference childReference : children.getItems()) {
-            Drive.Files.Get get = apiClient.files().get(childReference.getId()).setFields(FILE_REQUIRED_FIELDS);
-            File file = (File) safeExecute(get);
-            if (!RestrictedMimeTypes.isRestricted(file.getMimeType())) {
-                resultList.add(new FileMetadata(file));
+        try {
+            Drive.Children.List list = apiClient.children().list(folderId)
+                    .setQ(format("trashed = false and '%s' in parents", folderId));
+            ChildList children = (ChildList) safeExecute(list);
+            List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
+            for (ChildReference childReference : children.getItems()) {
+                Drive.Files.Get get = apiClient.files().get(childReference.getId()).setFields(FILE_REQUIRED_FIELDS);
+                File file = (File) safeExecute(get);
+                if (!GoogleDriveUtils.isRestrictedGoogleApp(file)) {
+                    resultList.add(new FileMetadata(file));
+                }
             }
+    
+            return resultList;
+        } catch (IOException e) {
+            throw new IOException(format("Failed to list child entries in remote folder '%s'", folderId), e);
         }
-
-        return resultList;
     }
 
     public FileMetadata downloadFile(String id, java.io.File localFile) throws InterruptedException, IOException {
@@ -293,15 +296,7 @@ public class GoogleDriveService {
                 ChangeList changes = (ChangeList) safeExecute(request);
                 revisionNumber = changes.getLargestChangeId();
                 for (Change change : changes.getItems()) {
-                    String title = change.getDeleted() ? null : change.getFile().getTitle();
-                    boolean isDir = !change.getDeleted() && change.getFile().getMimeType().equals("application/vnd.google-apps.folder");
-                    String md5CheckSum = getMd5CheckSum(change);
-                    FileSystemChange<String> fileSystemChange = new FileSystemChange<>(change.getFileId(),
-                                                                                       getParentId(change),
-                                                                                       title,
-                                                                                       isDir,
-                                                                                       md5CheckSum);
-                    resultChanges.add(fileSystemChange);
+                    resultChanges.add(new FileSystemChange<String>(change));
                 }
                 request.setPageToken(changes.getNextPageToken());
                 request.setPageToken(null);
@@ -315,22 +310,14 @@ public class GoogleDriveService {
     }
 
     String requestRefreshToken(String code) throws IOException {
-        GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
-        tokenRequest.setRedirectUri(REDIRECT_URI);
-        GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
-        return googleTokenResponse.getRefreshToken();
-    }
-
-    private String getParentId(Change change) {
-        String parentId = null;
-        if (change.getDeleted() || change.getFile().getLabels().getTrashed()) {
-            return parentId;
+        try {
+            GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
+            tokenRequest.setRedirectUri(REDIRECT_URI);
+            GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
+            return googleTokenResponse.getRefreshToken();
+        } catch (IOException e) {
+            throw new IOException(format("Failed to get refresh token with code '%s'", code), e);
         }
-
-        List<ParentReference> parents = change.getFile().getParents();
-        ParentReference parentReference = parents.get(0);
-
-        return parentReference.getIsRoot() ? ROOT_DIR_ID : parentReference.getId();
     }
 
     private Object safeExecute(AbstractGoogleClientRequest request) throws IOException {
@@ -343,13 +330,8 @@ public class GoogleDriveService {
                     result = "deletion succeeded";
                 }
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
-                try {
-                    timeout += TIMEOUT_STEP;
-                    logger.warn(format("Request timeout. Retrying in %d seconds", timeout), e);
-                    TimeUnit.SECONDS.sleep(timeout);
-                } catch (InterruptedException e1) {
-                    logger.warn("Request execution was interrupted", e1);
-                }
+                timeout += TIMEOUT_STEP;
+                logger.warn("Request timeout. Retrying...", e);
             }
         }
 
@@ -369,13 +351,8 @@ public class GoogleDriveService {
                         .buildGetRequest(downloadUrl)
                         .execute();
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
-                try {
-                    timeout += TIMEOUT_STEP;
-                    logger.warn(format("Request timeout. Retrying in %d seconds", timeout), e);
-                    TimeUnit.SECONDS.sleep(timeout);
-                } catch (InterruptedException e1) {
-                    logger.warn("Request execution was interrupted", e1);
-                }
+                timeout += TIMEOUT_STEP;
+                logger.warn("Request timeout. Retrying...", e);
             }
         }
 
@@ -388,27 +365,11 @@ public class GoogleDriveService {
 
     private GenericUrl getGenericUrl(File file) {
         String downloadUrl;
-        if (isSupportedGoogleApp(file)) {
+        if (GoogleDriveUtils.isSupportedGoogleApp(file)) {
             downloadUrl = file.getExportLinks().get("application/pdf");
         } else {
             downloadUrl = file.getDownloadUrl();
         }
         return new GenericUrl(downloadUrl);
-    }
-
-    private boolean isSupportedGoogleApp(File file) {
-        return file.getMimeType().equals("application/vnd.google-apps.document") ||
-            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
-            file.getMimeType().equals("application/vnd.google-apps.presentation");
-    }
-
-    private String getMd5CheckSum(Change change) {
-        if (change.getDeleted()) {
-            return null;
-        } else if (isSupportedGoogleApp(change.getFile())) {
-            return change.getFile().getEtag();
-        } else {
-            return change.getFile().getMd5Checksum();
-        }
     }
 }
