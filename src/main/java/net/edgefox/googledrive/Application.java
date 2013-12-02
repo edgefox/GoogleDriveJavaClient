@@ -1,27 +1,17 @@
 package net.edgefox.googledrive;
 
 import net.edgefox.googledrive.config.ConfigurationManager;
-import net.edgefox.googledrive.filesystem.FileMetadata;
-import net.edgefox.googledrive.filesystem.FileSystem;
-import net.edgefox.googledrive.filesystem.Trie;
+import net.edgefox.googledrive.filesystem.Storage;
 import net.edgefox.googledrive.filesystem.change.ChangesApplier;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;
 import net.edgefox.googledrive.service.GoogleDriveService;
 import net.edgefox.googledrive.util.Notifier;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * User: Ivan Lyutov
@@ -32,11 +22,7 @@ import java.util.List;
 public class Application {
     private static final Logger logger = Logger.getLogger(Application.class);
     @Inject
-    private Path trackedPath;
-    @Inject
     private GoogleDriveService googleDriveService;
-    @Inject
-    private volatile FileSystem fileSystem;
     @Inject
     private LocalChangesWatcher localChangesWatcher;
     @Inject
@@ -45,17 +31,15 @@ public class Application {
     private ChangesApplier changesApplier;
     @Inject
     private ConfigurationManager configurationManager;
+    @Inject
+    private Storage storage;
 
     @Inject
     public void start() throws Exception {
         prepareGoogleDriveAuth();
 
-        Notifier.showMessage("System Notification",
-                             "Initial sync started");
-        initStorage(GoogleDriveService.ROOT_DIR_ID, trackedPath.toString());
-        Notifier.showMessage("System Notification",
-                             "Initial sync completed");
-
+        storage.checkout();
+        
         remoteChangesWatcher.start();
         localChangesWatcher.start();
         changesApplier.start();
@@ -69,49 +53,5 @@ public class Application {
             configurationManager.updateProperties("REFRESH_TOKEN", newRefreshToken);
             Notifier.showMessage("System Notification", "Authorization succeeded. Starting application...");
         }
-    }
-
-    private void initStorage(String id, String path) throws IOException, InterruptedException {
-        List<FileMetadata> root = googleDriveService.listDirectory(id); 
-        File[] files = new File(path).listFiles();
-        List<File> localFiles = new ArrayList<>();
-        if (files != null) {
-            localFiles.addAll(Arrays.asList(files));
-        }
-        for (FileMetadata remoteMetadata : root) {
-            File file = new File(path, remoteMetadata.getTitle());
-            Path imagePath = trackedPath.relativize(Paths.get(file.getAbsolutePath()));
-            FileMetadata localMetadata;
-            if (!file.exists()) {
-                localMetadata = remoteMetadata;
-                fileSystem.update(imagePath, remoteMetadata);
-            } else {
-                Trie<String,FileMetadata> imageFile = fileSystem.get(imagePath);
-                localMetadata = imageFile.getModel();
-                imageFile.setModel(remoteMetadata);
-                fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
-            }
-
-            if (remoteMetadata.isDir()) {
-                if (!file.exists()) {
-                    FileUtils.forceMkdir(file);
-                }
-                initStorage(remoteMetadata.getId(), file.getAbsolutePath());
-            } else if (!file.exists() || 
-                       localMetadata.getCheckSum() == null || 
-                       !localMetadata.getCheckSum().equals(remoteMetadata.getCheckSum())) {
-                googleDriveService.downloadFile(remoteMetadata.getId(), file);
-            }
-            localFiles.remove(file);
-        }
-
-        for (File file : localFiles) {
-            if (file.isDirectory()) {
-                googleDriveService.createOrGetDirectory(id, file.getName());                
-            } else {
-                googleDriveService.upload(id, file);
-            }
-        }
-
     }
 }

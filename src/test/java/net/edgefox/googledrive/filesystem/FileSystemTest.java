@@ -30,7 +30,7 @@ public class FileSystemTest {
 
     @Before
     public void setUp() throws Exception {
-        fileSystem = new FileSystem(basePath, configurationManager);
+        fileSystem = new FileSystem(basePath);
         MockitoAnnotations.initMocks(this);
         Mockito.when(configurationManager.getProperty("REVISION_NUMBER")).thenReturn("1000");
     }

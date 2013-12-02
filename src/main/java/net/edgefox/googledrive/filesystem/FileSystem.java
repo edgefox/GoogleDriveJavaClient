@@ -1,12 +1,9 @@
 package net.edgefox.googledrive.filesystem;
 
-import net.edgefox.googledrive.config.ConfigurationManager;
 import net.edgefox.googledrive.service.GoogleDriveService;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -27,16 +24,21 @@ public class FileSystem implements Serializable {
     private final Trie<String, FileMetadata> trie;
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
     private transient Path basePath;
-    private ConfigurationManager configurationManager;
+    private long fileSystemRevision = 0L;
+    public static final String DB_FILE_PATH = String.format("%s%s%s%s%s",
+                                                             System.getProperty("user.home"),
+                                                             File.separator,
+                                                             ".googledrive",
+                                                             File.separator,
+                                                             "data.db");
 
-    FileSystem(Path basePath, ConfigurationManager configurationManager) {
+    FileSystem(Path basePath) {
         this.basePath = basePath;
         trie = new Trie<>();
         trie.setModel(new FileMetadata(GoogleDriveService.ROOT_DIR_ID,
                                        GoogleDriveService.ROOT_DIR_ID,
                                        true,
                                        null));
-        this.configurationManager = configurationManager;
     }
 
     public void addRemoteId(String id, Trie<String, FileMetadata> trie) {
@@ -44,11 +46,17 @@ public class FileSystem implements Serializable {
     }
     
     public long getFileSystemRevision() {
-        return Long.parseLong(configurationManager.getProperty("REVISION_NUMBER"));
+        return fileSystemRevision;
     }
 
     public void updateFileSystemRevision(long fileSystemRevision) throws IOException {
-        configurationManager.updateProperties("REVISION_NUMBER", String.valueOf(fileSystemRevision));
+        lock.writeLock().lock();
+        try {
+            this.fileSystemRevision = fileSystemRevision;
+            persistFileSystem();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public Path getBasePath() {
@@ -77,6 +85,9 @@ public class FileSystem implements Serializable {
                     current = current.addChild(child);
                 }
             }
+            persistFileSystem();
+        } catch (IOException e) {
+            logger.error("Failed to save fileSystem", e);
         } finally {
             logger.info(String.format("FileSystem has been updated with: %s", path));
             lock.writeLock().unlock();
@@ -157,5 +168,13 @@ public class FileSystem implements Serializable {
         if (entry.getParent() == null) return Paths.get("");
 
         return getPath(entry.getParent()).resolve(entry.getKey());
+    }
+
+    private void persistFileSystem() throws IOException {
+        File database = new File(DB_FILE_PATH);
+        database.delete();
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(database))) {
+            objectOutputStream.writeObject(this);
+        }
     }
 }
