@@ -94,16 +94,29 @@ public class Storage {
                 }
             } else {
                 Trie<String, FileMetadata> imageFile = fileSystem.get(trackedPath.relativize(file.toPath()));
-                String parentId = imageFile.getParent().getModel().getId();
-                FileMetadata remoteMetadata;
-                if (file.isDirectory()) {
-                    remoteMetadata = googleDriveService.createOrGetDirectory(parentId, file.getName());
-                    checkoutLocal(file, handledFiles);
+                if (imageFile != null) {
+                    String parentId = imageFile.getParent().getModel().getId();
+                    if (file.isDirectory()) {
+                        FileMetadata remoteMetadata = googleDriveService.createOrGetDirectory(parentId, file.getName());
+                        imageFile.setModel(remoteMetadata);
+                        fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
+                        checkoutLocal(file, handledFiles);
+                    } else {
+                        FileMetadata remoteMetadata = googleDriveService.upload(parentId, file);
+                        imageFile.setModel(remoteMetadata);
+                        fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
+                    }
                 } else {
-                    remoteMetadata = googleDriveService.upload(parentId, file);
+                    String parentId = fileSystem.get(trackedPath.relativize(file.toPath().getParent())).getModel().getId();
+                    if (file.isDirectory()) {
+                        FileMetadata remoteMetadata = googleDriveService.createOrGetDirectory(parentId, file.getName());
+                        fileSystem.update(trackedPath.relativize(file.toPath()), remoteMetadata);
+                        checkoutLocal(file, handledFiles);
+                    } else {
+                        FileMetadata remoteMetadata = googleDriveService.upload(parentId, file);
+                        fileSystem.update(trackedPath.relativize(file.toPath()), remoteMetadata);
+                    }
                 }
-                imageFile.setModel(remoteMetadata);
-                fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
             }
         }
     }

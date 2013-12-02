@@ -27,12 +27,10 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
 
     public void start() throws IOException {
         logger.info("Trying to start RemoteChangesWatcher");
-        if (fileSystem.getFileSystemRevision() == 0L) {
-            logger.info("Setting initial revision number");
-            Long revisionNumber = googleDriveService.about().getLargestChangeId();
-            fileSystem.updateFileSystemRevision(revisionNumber);
-            logger.info(String.format("Initial revision number has been set to %d", revisionNumber));
-        }
+        logger.info("Setting initial revision number");
+        Long revisionNumber = googleDriveService.about().getLargestChangeId();
+        fileSystem.updateFileSystemRevision(revisionNumber);
+        logger.info(String.format("Initial revision number has been set to %d", revisionNumber));
         executorService.scheduleWithFixedDelay(new PollTask(), 0, 10, TimeUnit.SECONDS);
         logger.info("RemoteChangesWatcher has been successfully started");
     }
