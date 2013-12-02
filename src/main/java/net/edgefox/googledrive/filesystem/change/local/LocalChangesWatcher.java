@@ -102,7 +102,7 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
                     Files.isHidden(child)) {
                     return;
                 }
-                String md5CheckSum = kind == ENTRY_DELETE ? null : IOUtils.getFileMd5CheckSum(child);
+                String md5CheckSum = kind == ENTRY_DELETE || Files.isDirectory(filePath) ? null : IOUtils.getFileMd5CheckSum(child);
                 changes.add(new FileSystemChange<>(child,
                                                    kind == ENTRY_DELETE ? null : child.getParent(),
                                                    child.getFileName().toString(),
