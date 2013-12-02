@@ -25,7 +25,7 @@ public class FileSystemChange<T> {
 
     @SuppressWarnings("unchecked")
     public FileSystemChange(Change change) {
-        id = (T) change.getId();
+        id = (T) change.getFileId();
         parentId = (T) GoogleDriveUtils.getParentId(change);
         title = change.getDeleted() ? null : change.getFile().getTitle();
         dir = GoogleDriveUtils.getIsGoogleDir(change);
