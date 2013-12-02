@@ -128,7 +128,11 @@ public class GoogleDriveService {
         FileContent mediaContent = new FileContent(null, localFile);
 
         FileMetadata child = findChild(folderId, localFile.getName());
+        
         if (child != null) {
+            if (child.getCheckSum() == null && !child.isDir()) {
+                return child;
+            }
             File updatedFile = (File) safeExecute(apiClient.files().update(child.getId(), file, mediaContent).setFields(FILE_REQUIRED_FIELDS));
             logger.trace(String.format("File has been successfully uploaded: '%s'", localFile));
             return new FileMetadata(updatedFile);
@@ -353,9 +357,7 @@ public class GoogleDriveService {
 
     private GenericUrl getGenericUrl(File file) {
         String downloadUrl;
-        if (file.getMimeType().equals("application/vnd.google-apps.document") ||
-            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
-            file.getMimeType().equals("application/vnd.google-apps.presentation")) {
+        if (isSupportedGoogleApp(file)) {
             downloadUrl = file.getExportLinks().get("application/pdf");
         } else {
             downloadUrl = file.getDownloadUrl();
@@ -363,12 +365,16 @@ public class GoogleDriveService {
         return new GenericUrl(downloadUrl);
     }
 
+    private boolean isSupportedGoogleApp(File file) {
+        return file.getMimeType().equals("application/vnd.google-apps.document") ||
+            file.getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
+            file.getMimeType().equals("application/vnd.google-apps.presentation");
+    }
+
     private String getMd5CheckSum(Change change) {
         if (change.getDeleted()) {
             return null;
-        } else if (change.getFile().getMimeType().equals("application/vnd.google-apps.document") ||
-                   change.getFile().getMimeType().equals("application/vnd.google-apps.spreadsheet") ||
-                   change.getFile().getMimeType().equals("application/vnd.google-apps.presentation")) {
+        } else if (isSupportedGoogleApp(change.getFile())) {
             return change.getFile().getEtag();
         } else {
             return change.getFile().getMd5Checksum();
