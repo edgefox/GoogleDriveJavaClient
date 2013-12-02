@@ -333,7 +333,6 @@ public class GoogleDriveService {
         return parentReference.getIsRoot() ? ROOT_DIR_ID : parentReference.getId();
     }
 
-    @SuppressWarnings("checked")
     private Object safeExecute(AbstractGoogleClientRequest request) throws IOException {
         long timeout = 0;
         Object result = null;
