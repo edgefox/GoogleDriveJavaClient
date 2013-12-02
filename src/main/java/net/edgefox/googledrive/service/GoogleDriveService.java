@@ -145,7 +145,7 @@ public class GoogleDriveService {
     
             return new FileMetadata(uploadedFile);
         } catch (IOException e) {
-            throw new IOException(format("Failed to upload file %s to remote directory '%s'", localFile, folderId));
+            throw new IOException(format("Failed to upload file %s to remote directory '%s'", localFile, folderId), e);
         }
     }
 
@@ -156,7 +156,7 @@ public class GoogleDriveService {
             safeExecute(delete);
             logger.trace(format("Resource with id '%s' has been successfully deleted from remote storage", id));
         } catch (IOException e) {
-            throw new IOException(format("Failed to delete remote file '%s'", id));
+            throw new IOException(format("Failed to delete remote file '%s'", id), e);
         }
     }
 
@@ -169,7 +169,7 @@ public class GoogleDriveService {
     
             return new FileMetadata(file);
         } catch (IOException e) {
-            throw new IOException(format("Failed to get metadata for remote file '%s'", id));
+            throw new IOException(format("Failed to get metadata for remote file '%s'", id), e);
         }
     }
 
@@ -190,7 +190,7 @@ public class GoogleDriveService {
     
             return new FileMetadata(createdDirectory);
         } catch (IOException e) {
-            throw new IOException(format("Failed to create new directory '%s' at '%s'", name, parentId));
+            throw new IOException(format("Failed to create new directory '%s' at '%s'", name, parentId), e);
         }
     }
 
@@ -218,7 +218,7 @@ public class GoogleDriveService {
             File file = (File) safeExecute(get);
             return new FileMetadata(file);
         } catch (IOException e) {
-            throw new IOException(format("Failed to get child entry '%s' in remote folder '%s'", title, folderId));
+            throw new IOException(format("Failed to get child entry '%s' in remote folder '%s'", title, folderId), e);
         }
     }
 
@@ -234,7 +234,7 @@ public class GoogleDriveService {
     
             return result;
         } catch (IOException e) {
-            throw new IOException(format("Failed to get all child entries of remote folder '%s'", folderId));
+            throw new IOException(format("Failed to get all child entries of remote folder '%s'", folderId), e);
         }
     }
 
@@ -280,7 +280,7 @@ public class GoogleDriveService {
     
             return new FileMetadata(file);
         } catch (IOException e) {
-            throw new IOException(format("Failed to download remote file '%s' to '%s'", id, localFile));
+            throw new IOException(format("Failed to download remote file '%s' to '%s'", id, localFile), e);
         }
     }
 
@@ -310,7 +310,7 @@ public class GoogleDriveService {
     
             return new RemoteChangePackage(revisionNumber, resultChanges);
         } catch (IOException e) {
-            throw new IOException(format("Failed to get remote changes with revision '%s'", revisionNumber));
+            throw new IOException(format("Failed to get remote changes with revision '%s'", revisionNumber), e);
         }
     }
 
