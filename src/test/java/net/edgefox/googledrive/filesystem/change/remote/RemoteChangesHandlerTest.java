@@ -46,12 +46,12 @@ public class RemoteChangesHandlerTest {
     private Set<Path> handledPaths = new HashSet<>();
     @InjectMocks
     @Spy
-    private RemoteChangesHandler remoteChangesHandler = new RemoteChangesHandler(trackedPath);
+    private RemoteChangesHandler remoteChangesHandler = new RemoteChangesHandler();
 
     private FileSystemChange<String> directoryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                               GoogleDriveService.ROOT_DIR_ID,
                                                                               UUID.randomUUID().toString(),
-                                                                              true, UUID.randomUUID().toString());
+                                                                              true, null);
     private FileSystemChange<String> fileChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                          GoogleDriveService.ROOT_DIR_ID,
                                                                          UUID.randomUUID().toString(),
@@ -59,7 +59,7 @@ public class RemoteChangesHandlerTest {
     private FileSystemChange<String> deletedEntryChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                                  null,
                                                                                  UUID.randomUUID().toString(),
-                                                                                 false, UUID.randomUUID().toString());
+                                                                                 false, null);
     private FileSystemChange<String> movedChange = new FileSystemChange<>(UUID.randomUUID().toString(),
                                                                           directoryChange.getId(),
                                                                           UUID.randomUUID().toString(),
@@ -112,7 +112,7 @@ public class RemoteChangesHandlerTest {
         verify(remoteChangesHandler, times(1)).handleNewEntry(fileChange);
         verify(remoteChangesHandler, times(1)).downloadNewFile(fileChange);
         verify(googleDriveService, times(1)).downloadFile(fileChange.getId(), filePath.toFile());
-        verify(fileSystem, times(1)).update(Paths.get(fileChange.getTitle()), newFileMetadata);
+        verify(fileSystem, times(1)).update(trackedPath.resolve(fileChange.getTitle()), newFileMetadata);
         verify(remoteChangesWatcher, times(1)).changeHandled(fileChange);
         verify(localChangesWatcher, times(1)).ignoreChanges(handledPaths);
 

@@ -55,4 +55,10 @@ public class IOUtils {
 
         return sb.toString();
     }
+
+    public static void safeCreateDirectory(Path newDirectoryPath) throws IOException {
+        if (!Files.exists(newDirectoryPath)) {
+            Files.createDirectory(newDirectoryPath);
+        }
+    }
 }

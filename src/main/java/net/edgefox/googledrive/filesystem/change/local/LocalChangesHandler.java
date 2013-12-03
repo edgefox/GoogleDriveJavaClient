@@ -24,7 +24,6 @@ import java.util.Set;
 @Singleton
 public class LocalChangesHandler {
     private static Logger logger = Logger.getLogger(LocalChangesHandler.class);
-    private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;
     @Inject
@@ -34,11 +33,6 @@ public class LocalChangesHandler {
     @Inject
     private GoogleDriveService googleDriveService;
     private Set<String> handledIds = new HashSet<>();
-
-    @Inject
-    public LocalChangesHandler(Path trackedPath) {
-        this.trackedPath = trackedPath;
-    }
 
     public void handle() {
         handledIds.clear();
@@ -56,7 +50,7 @@ public class LocalChangesHandler {
         boolean success = true;
         try {
             logger.info(String.format("Trying to apply change: %s", change));
-            Trie<String, FileMetadata> imageFile = fileSystem.get(trackedPath.relativize(change.getId()));
+            Trie<String, FileMetadata> imageFile = fileSystem.get(change.getId());
             boolean isNewEntry = imageFile == null;
             if (isNewEntry) {
                 handleNewEntry(change);
@@ -102,10 +96,10 @@ public class LocalChangesHandler {
     }
 
     void createDirectory(FileSystemChange<Path> change) throws IOException {
-        Trie<String, FileMetadata> parentImageFile = fileSystem.get(trackedPath.relativize(change.getParentId()));
+        Trie<String, FileMetadata> parentImageFile = fileSystem.get(change.getParentId());
         String parentId = parentImageFile.getModel().getId();
         FileMetadata fileMetadata = googleDriveService.createOrGetDirectory(parentId, change.getTitle());
-        fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
+        fileSystem.update(change.getId(), fileMetadata);
         handledIds.add(fileMetadata.getId());
         Notifier.showMessage("Local update", String.format("Created directory %s", change.getId()));
     }
@@ -118,7 +112,7 @@ public class LocalChangesHandler {
     }
 
     void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
-        Trie<String, FileMetadata> parent = fileSystem.get(trackedPath.relativize(change.getParentId()));
+        Trie<String, FileMetadata> parent = fileSystem.get(change.getParentId());
 
         if (parent == null) {
             throw new IllegalStateException(String.format("Unable to handle change: %s", change));
@@ -126,7 +120,7 @@ public class LocalChangesHandler {
 
         FileMetadata fileMetadata = googleDriveService.upload(parent.getModel().getId(),
                                                               change.getId().toFile());
-        fileSystem.update(trackedPath.relativize(change.getId()), fileMetadata);
+        fileSystem.update(change.getId(), fileMetadata);
         handledIds.add(fileMetadata.getId());
         Notifier.showMessage("Local update", String.format("File update %s", change.getId()));
     }

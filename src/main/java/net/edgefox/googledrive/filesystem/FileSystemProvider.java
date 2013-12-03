@@ -26,7 +26,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
     public net.edgefox.googledrive.filesystem.FileSystem get() {
         if (fileSystem == null) {
             synchronized (FileSystemProvider.class) {
-                if (Files.exists(Paths.get(FileSystem.DB_FILE_PATH))) {
+                if (Files.exists(FileSystem.DB_FILE_PATH)) {
                     fileSystem = readFileSystem();
                 } else {
                     fileSystem = createNewFileSystem();
@@ -39,7 +39,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
 
     private FileSystem readFileSystem() {
         FileSystem result;
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FileSystem.DB_FILE_PATH))) {
+        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(FileSystem.DB_FILE_PATH))) {
             result = (FileSystem) in.readObject();
             result.setBasePath(trackedPath);
         } catch (Exception e) {
@@ -59,7 +59,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
                         return FileVisitResult.CONTINUE;
                     }
 
-                    result.update(trackedPath.relativize(dir), getPathMetadata(dir, attrs));
+                    result.update(dir, getPathMetadata(dir, attrs));
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -69,7 +69,7 @@ public class FileSystemProvider implements Provider<FileSystem> {
                         return FileVisitResult.CONTINUE;
                     }
 
-                    result.update(trackedPath.relativize(file), getPathMetadata(file, attrs));
+                    result.update(file, getPathMetadata(file, attrs));
                     return FileVisitResult.CONTINUE;
                 }
 

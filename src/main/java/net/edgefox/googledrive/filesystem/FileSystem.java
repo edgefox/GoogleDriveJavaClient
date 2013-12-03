@@ -4,6 +4,7 @@ import net.edgefox.googledrive.service.GoogleDriveService;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -25,12 +26,12 @@ public class FileSystem implements Serializable {
     private final Map<String, Trie<String, FileMetadata>> idToTrie = new HashMap<String, Trie<String, FileMetadata>>();
     private transient Path basePath;
     private long fileSystemRevision = 0L;
-    public static final String DB_FILE_PATH = String.format("%s%s%s%s%s",
-                                                             System.getProperty("user.home"),
-                                                             File.separator,
-                                                             ".googledrive",
-                                                             File.separator,
-                                                             "data.db");
+    public static final Path DB_FILE_PATH = Paths.get(String.format("%s%s%s%s%s",
+                                                                    System.getProperty("user.home"),
+                                                                    File.separator,
+                                                                    ".googledrive",
+                                                                    File.separator,
+                                                                    "data.db"));
 
     FileSystem(Path basePath) {
         this.basePath = basePath;
@@ -44,7 +45,7 @@ public class FileSystem implements Serializable {
     public void addRemoteId(String id, Trie<String, FileMetadata> trie) {
         idToTrie.put(id, trie);
     }
-    
+
     public long getFileSystemRevision() {
         return fileSystemRevision;
     }
@@ -68,6 +69,7 @@ public class FileSystem implements Serializable {
     }
 
     public void update(Path path, FileMetadata metadata) {
+        path = relativizePathIfNeeded(path);
         lock.writeLock().lock();
         logger.info(String.format("Updating fileSystem with: %s", path));
         try {
@@ -95,6 +97,7 @@ public class FileSystem implements Serializable {
     }
 
     public void delete(Path path) {
+        path = relativizePathIfNeeded(path);
         lock.writeLock().lock();
         try {
             Trie<String, FileMetadata> foundEntry = get(path);
@@ -128,6 +131,7 @@ public class FileSystem implements Serializable {
     }
 
     public Trie<String, FileMetadata> get(Path path) {
+        path = relativizePathIfNeeded(path);
         lock.readLock().lock();
         try {
             if (path.toFile().getName().isEmpty()) {
@@ -170,10 +174,18 @@ public class FileSystem implements Serializable {
         return getPath(entry.getParent()).resolve(entry.getKey());
     }
 
+    private Path relativizePathIfNeeded(Path path) {
+        if (path.startsWith(basePath)) {
+            path = basePath.relativize(path);
+        }
+        return path;
+    }
+
     private void persistFileSystem() throws IOException {
-        File database = new File(DB_FILE_PATH);
-        database.delete();
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(database))) {
+        if (Files.exists(DB_FILE_PATH)) {
+            Files.delete(DB_FILE_PATH);
+        }
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(Files.newOutputStream(DB_FILE_PATH))) {
             objectOutputStream.writeObject(this);
         }
     }

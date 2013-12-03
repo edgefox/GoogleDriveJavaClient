@@ -4,6 +4,7 @@ import com.google.inject.Singleton;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
 import net.edgefox.googledrive.service.GoogleDriveService;
+import net.edgefox.googledrive.util.IOUtils;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 
@@ -15,6 +16,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static net.edgefox.googledrive.util.IOUtils.*;
 
 /**
  * User: Ivan Lyutov
@@ -58,22 +61,19 @@ public class Storage {
         Set<File> handledFiles = new HashSet<>();
         for (FileMetadata remoteMetadata : root) {
             Path childPath = path.resolve(remoteMetadata.getTitle());
-            Path imagePath = trackedPath.relativize(childPath);
+            Trie<String,FileMetadata> imageFile = fileSystem.get(remoteMetadata.getId());
             FileMetadata localMetadata;
-            if (!Files.exists(childPath)) {
+            if (imageFile == null) {
                 localMetadata = remoteMetadata;
-                fileSystem.update(imagePath, remoteMetadata);
+                fileSystem.update(childPath, remoteMetadata);
             } else {
-                Trie<String,FileMetadata> imageFile = fileSystem.get(imagePath);
                 localMetadata = imageFile.getModel();
                 imageFile.setModel(remoteMetadata);
                 fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
             }
 
             if (remoteMetadata.isDir()) {
-                if (!Files.exists(childPath)) {
-                    Files.createDirectory(childPath);
-                }
+                safeCreateDirectory(childPath);
                 checkoutRemote(remoteMetadata.getId(), childPath);
             } else if (!Files.exists(childPath) ||
                     localMetadata.getCheckSum() == null ||
@@ -98,7 +98,7 @@ public class Storage {
                     checkoutLocal(file, handledFiles);
                 }
             } else {
-                Trie<String, FileMetadata> imageFile = fileSystem.get(trackedPath.relativize(file.toPath()));
+                Trie<String, FileMetadata> imageFile = fileSystem.get(file.toPath());
                 if (imageFile != null) {
                     String parentId = imageFile.getParent().getModel().getId();
                     if (file.isDirectory()) {
@@ -112,14 +112,14 @@ public class Storage {
                         fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
                     }
                 } else {
-                    String parentId = fileSystem.get(trackedPath.relativize(file.toPath().getParent())).getModel().getId();
+                    String parentId = fileSystem.get(file.toPath().getParent()).getModel().getId();
                     if (file.isDirectory()) {
                         FileMetadata remoteMetadata = googleDriveService.createOrGetDirectory(parentId, file.getName());
-                        fileSystem.update(trackedPath.relativize(file.toPath()), remoteMetadata);
+                        fileSystem.update(file.toPath(), remoteMetadata);
                         checkoutLocal(file, handledFiles);
                     } else {
                         FileMetadata remoteMetadata = googleDriveService.upload(parentId, file);
-                        fileSystem.update(trackedPath.relativize(file.toPath()), remoteMetadata);
+                        fileSystem.update(file.toPath(), remoteMetadata);
                     }
                 }
             }

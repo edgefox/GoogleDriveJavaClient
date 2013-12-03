@@ -6,6 +6,7 @@ import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
+import net.edgefox.googledrive.util.IOUtils;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -20,6 +21,8 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
+import static net.edgefox.googledrive.util.IOUtils.*;
+
 /**
  * User: Ivan Lyutov
  * Date: 11/21/13
@@ -28,7 +31,6 @@ import java.util.Set;
 @Singleton
 public class RemoteChangesHandler {
     private static Logger logger = Logger.getLogger(RemoteChangesWatcher.class);
-    private Path trackedPath;
     @Inject
     private volatile FileSystem fileSystem;
     @Inject
@@ -38,11 +40,6 @@ public class RemoteChangesHandler {
     @Inject
     private GoogleDriveService googleDriveService;
     private Set<Path> handledPaths = new HashSet<>();
-
-    @Inject
-    public RemoteChangesHandler(Path trackedPath) {
-        this.trackedPath = trackedPath;
-    }
 
     public void handle() {
         handledPaths.clear();
@@ -108,18 +105,17 @@ public class RemoteChangesHandler {
     }
 
     void createDirectory(FileSystemChange<String> change) throws IOException {
-        Path parentPath = convertRemoteIdToLocal(change.getParentId());
+        Trie<String, FileMetadata> parentImage = fileSystem.get(change.getParentId());
+        Path fullParentPath = fileSystem.getFullPath(parentImage);
 
-        if (parentPath == null) {
+        if (fullParentPath == null) {
             throw new IllegalStateException(String.format("Unable to handle change: %s", change));
         }
 
-        Path fullParentPath = fileSystem.getFullPath(fileSystem.get(change.getParentId()));
-        File directory = new File(fullParentPath.toFile(), change.getTitle());
-        FileUtils.forceMkdir(directory);
+        Path newDirectoryPath = fullParentPath.resolve(change.getTitle());
+        safeCreateDirectory(newDirectoryPath);
         FileMetadata fileMetadata = new FileMetadata(change.getId(), change.getTitle(), change.isDir(), null);
-        Path newDirectoryPath = Paths.get(directory.getAbsolutePath());
-        fileSystem.update(trackedPath.relativize(newDirectoryPath), fileMetadata);
+        fileSystem.update(newDirectoryPath, fileMetadata);
         handledPaths.add(newDirectoryPath);
         Notifier.showMessage("Remote update", 
                              String.format("Added new directory %s", newDirectoryPath.toString()));
@@ -186,13 +182,9 @@ public class RemoteChangesHandler {
         File localFile = new File(parentFile, change.getTitle());
         FileMetadata fileMetadata = googleDriveService.downloadFile(change.getId(), localFile);
         Path newFilePath = Paths.get(localFile.toURI());
-        fileSystem.update(trackedPath.relativize(newFilePath), fileMetadata);
+        fileSystem.update(newFilePath, fileMetadata);
         handledPaths.add(newFilePath);
         Notifier.showMessage("Remote update",
                              String.format("Added new file %s", localFile.getAbsolutePath()));
-    }
-
-    private Path convertRemoteIdToLocal(String id) {
-        return trackedPath.relativize(fileSystem.getFullPath(fileSystem.get(id)));
     }
 }
