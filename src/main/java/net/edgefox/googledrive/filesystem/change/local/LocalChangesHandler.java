@@ -105,10 +105,11 @@ public class LocalChangesHandler {
     }
 
     void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
+        Path pathToDelete = fileSystem.getFullPath(imageFile);
         googleDriveService.delete(imageFile.getModel().getId());
         fileSystem.delete(imageFile);
         handledIds.add(imageFile.getModel().getId());
-        Notifier.showMessage("Local update", String.format("Deleted %s", fileSystem.getFullPath(imageFile)));
+        Notifier.showMessage("Local update", String.format("Deleted %s", pathToDelete));
     }
 
     void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
