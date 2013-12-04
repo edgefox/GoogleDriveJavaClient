@@ -20,7 +20,6 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class Application {
-    private static Logger logger = Logger.getLogger(Application.class);
     @Inject
     private GoogleDriveService googleDriveService;
     @Inject
@@ -33,9 +32,13 @@ public class Application {
     private ConfigurationManager configurationManager;
     @Inject
     private Storage storage;
+    @Inject
+    private ShutdownHook shutdownHook;
 
     @Inject
     public void start() throws Exception {
+        configureGracefulShutdown();
+
         prepareGoogleDriveAuth();
 
         storage.checkout();
@@ -43,6 +46,10 @@ public class Application {
         remoteChangesWatcher.start();
         localChangesWatcher.start();
         changesApplier.start();
+    }
+
+    private void configureGracefulShutdown() {
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdownHook));
     }
 
     private void prepareGoogleDriveAuth() throws Exception {

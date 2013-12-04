@@ -20,6 +20,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Ivan Lyutov
  */
 public class FileSystem implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private static Logger logger = Logger.getLogger(FileSystem.class);
     private static final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Trie<String, FileMetadata> trie;
@@ -172,6 +174,10 @@ public class FileSystem implements Serializable {
         if (entry.getParent() == null) return Paths.get("");
 
         return getPath(entry.getParent()).resolve(entry.getKey());
+    }
+    
+    public void lockForShutdown() {
+        lock.writeLock().lock();
     }
 
     private Path relativizePathIfNeeded(Path path) {
