@@ -1,4 +1,4 @@
-package net.edgefox.googledrive.service.util;
+package net.edgefox.googledrive.service;
 
 import com.google.api.services.drive.model.Change;
 import com.google.api.services.drive.model.File;
@@ -21,7 +21,8 @@ public class GoogleDriveUtils {
     private static final String GOOGLE_SITE = "application/vnd.google-apps.sites";
     private static final String GOOGLE_FUSION_TABLE = "application/vnd.google-apps.fusiontable";
     private static final String GOOGLE_FORM = "application/vnd.google-apps.form";
-    
+    private static final String GOOGLE_FOLDER = "application/vnd.google-apps.folder";
+
     private GoogleDriveUtils() {}
 
     public static String getMd5CheckSumFromChange(Change change) {
@@ -35,7 +36,7 @@ public class GoogleDriveUtils {
     }
 
     public static boolean getIsGoogleDir(Change change) {
-        return !change.getDeleted() && "application/vnd.google-apps.folder".equals(change.getFile().getMimeType());
+        return !change.getDeleted() && GOOGLE_FOLDER.equals(change.getFile().getMimeType());
     }
 
     public static boolean isSupportedGoogleApp(File file) {

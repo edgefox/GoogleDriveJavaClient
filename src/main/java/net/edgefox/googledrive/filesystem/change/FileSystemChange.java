@@ -1,7 +1,7 @@
 package net.edgefox.googledrive.filesystem.change;
 
 import com.google.api.services.drive.model.Change;
-import net.edgefox.googledrive.service.util.GoogleDriveUtils;
+import net.edgefox.googledrive.service.GoogleDriveUtils;
 
 /**
  * User: Ivan Lyutov
