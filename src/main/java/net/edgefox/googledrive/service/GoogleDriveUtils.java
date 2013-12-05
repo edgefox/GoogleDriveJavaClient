@@ -23,7 +23,8 @@ public class GoogleDriveUtils {
     private static final String GOOGLE_FORM = "application/vnd.google-apps.form";
     private static final String GOOGLE_FOLDER = "application/vnd.google-apps.folder";
 
-    private GoogleDriveUtils() {}
+    private GoogleDriveUtils() {
+    }
 
     public static String getMd5CheckSumFromChange(Change change) {
         if (change.getDeleted()) {
@@ -37,6 +38,10 @@ public class GoogleDriveUtils {
 
     public static boolean getIsGoogleDir(Change change) {
         return !change.getDeleted() && GOOGLE_FOLDER.equals(change.getFile().getMimeType());
+    }
+
+    public static boolean getIsGoogleDir(File file) {
+        return GOOGLE_FOLDER.equals(file.getMimeType());
     }
 
     public static boolean isSupportedGoogleApp(File file) {

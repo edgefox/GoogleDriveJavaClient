@@ -114,7 +114,6 @@ public class LocalChangesHandler {
 
     void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
         Trie<String, FileMetadata> parent = fileSystem.get(change.getParentId());
-
         if (parent == null) {
             throw new IllegalStateException(String.format("Unable to handle change: %s", change));
         }

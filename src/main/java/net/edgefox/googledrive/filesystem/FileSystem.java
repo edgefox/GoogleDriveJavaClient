@@ -171,7 +171,9 @@ public class FileSystem implements Serializable {
     }
 
     public Path getPath(Trie<String, FileMetadata> entry) {
-        if (entry.getParent() == null) return Paths.get("");
+        if (entry.getParent() == null) {
+            return Paths.get("");
+        }
 
         return getPath(entry.getParent()).resolve(entry.getKey());
     }

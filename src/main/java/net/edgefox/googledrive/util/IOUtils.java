@@ -24,7 +24,8 @@ import java.util.Arrays;
 public class IOUtils {
     private static Logger logger = Logger.getLogger(IOUtils.class);
     
-    private IOUtils() {}
+    private IOUtils() {        
+    }
 
     public static void safeClose(InputStream inputStream) {
         try {

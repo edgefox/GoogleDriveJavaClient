@@ -53,11 +53,11 @@ public class Application {
     }
 
     private void prepareGoogleDriveAuth() throws Exception {
-        if (StringUtils.isEmpty(configurationManager.getProperty("REFRESH_TOKEN"))) {
+        if (StringUtils.isEmpty(configurationManager.getProperty("refreshToken"))) {
             String authUrl = googleDriveService.auth();
             System.out.println(String.format("Please follow the url to authorize the application: '%s'", authUrl));
             String newRefreshToken = googleDriveService.handleRedirect();
-            configurationManager.updateProperties("REFRESH_TOKEN", newRefreshToken);
+            configurationManager.updateProperties("refreshToken", newRefreshToken);
             Notifier.showMessage("System Notification", "Authorization succeeded. Starting application...");
         }
     }

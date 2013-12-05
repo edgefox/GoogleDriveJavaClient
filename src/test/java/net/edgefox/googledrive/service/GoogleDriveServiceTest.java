@@ -52,7 +52,7 @@ public class GoogleDriveServiceTest {
 
     private void initMocks() throws Exception {
         MockitoAnnotations.initMocks(this);
-        Mockito.when(authRedirectListener.listenForAuthComplete()).thenReturn("REFRESH_TOKEN");
+        Mockito.when(authRedirectListener.listenForAuthComplete()).thenReturn("refreshToken");
     }
 
     private void initGoogleDrive() throws IOException {
@@ -60,10 +60,10 @@ public class GoogleDriveServiceTest {
         InputStream resource = Thread.currentThread().getContextClassLoader()
                                                      .getResourceAsStream("application.properties");
         properties.load(resource);
-        googleDriveService = new GoogleDriveService(properties.getProperty("REDIRECT_URI"), 
-                                                    properties.getProperty("APP_KEY"), 
-                                                    properties.getProperty("APP_SECRET"), 
-                                                    properties.getProperty("REFRESH_TOKEN"));
+        googleDriveService = new GoogleDriveService(properties.getProperty("redirectUri"), 
+                                                    properties.getProperty("appKey"), 
+                                                    properties.getProperty("appSecret"), 
+                                                    properties.getProperty("refreshToken"));
         googleDriveService.init();
     }
 
@@ -142,7 +142,7 @@ public class GoogleDriveServiceTest {
     @Test
     public void testHandleRedirect() throws Exception {
         String refreshToken = googleDriveService.handleRedirect();
-        assertEquals("REFRESH_TOKEN", refreshToken);
+        assertEquals("refreshToken", refreshToken);
     }
     
     @Test

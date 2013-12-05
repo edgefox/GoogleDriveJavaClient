@@ -53,10 +53,10 @@ public class GoogleDriveService {
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email"
     );
-    private final String REDIRECT_URI;
-    private final String APP_KEY;
-    private final String APP_SECRET;
-    private String REFRESH_TOKEN;
+    private final String redirectUri;
+    private final String appKey;
+    private final String appSecret;
+    private String refreshToken;
     private GoogleAuthorizationCodeFlow authFlow;
 
     private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum)";
@@ -69,22 +69,22 @@ public class GoogleDriveService {
     private static long TIMEOUT_STEP = 5;
 
     @Inject
-    public GoogleDriveService(@Named("REDIRECT_URI") String REDIRECT_URI,
-                              @Named("APP_KEY") String APP_KEY,
-                              @Named("APP_SECRET") String APP_SECRET,
-                              @Named("REFRESH_TOKEN") String REFRESH_TOKEN) throws IOException {
-        this.REDIRECT_URI = REDIRECT_URI;
-        this.APP_KEY = APP_KEY;
-        this.APP_SECRET = APP_SECRET;
-        this.REFRESH_TOKEN = REFRESH_TOKEN;
+    public GoogleDriveService(@Named("redirectUri") String redirectUri,
+                              @Named("appKey") String appKey,
+                              @Named("appSecret") String appSecret,
+                              @Named("refreshToken") String refreshToken) throws IOException {
+        this.redirectUri = redirectUri;
+        this.appKey = appKey;
+        this.appSecret = appSecret;
+        this.refreshToken = refreshToken;
     }
 
     @Inject
     public void init() throws IOException {
         authFlow = new GoogleAuthorizationCodeFlow.Builder(new ApacheHttpTransport(),
                                                            new JacksonFactory(),
-                                                           APP_KEY, APP_SECRET, SCOPES).build();
-        TokenResponse response = new TokenResponse().setRefreshToken(REFRESH_TOKEN)
+                                                           appKey, appSecret, SCOPES).build();
+        TokenResponse response = new TokenResponse().setRefreshToken(refreshToken)
                 .setExpiresInSeconds(0L);
         Credential credential = authFlow.createAndStoreCredential(response, "userId");
         apiClient = new Drive.Builder(new ApacheHttpTransport(),
@@ -94,15 +94,15 @@ public class GoogleDriveService {
 
     public String auth() throws Exception {
         GoogleAuthorizationCodeRequestUrl authUrl = authFlow.newAuthorizationUrl();
-        authUrl.setRedirectUri(REDIRECT_URI);
+        authUrl.setRedirectUri(redirectUri);
 
         return authUrl.build();
     }
 
     public String handleRedirect() throws Exception {
-        REFRESH_TOKEN = authRedirectListener.listenForAuthComplete();
+        refreshToken = authRedirectListener.listenForAuthComplete();
         init();
-        return REFRESH_TOKEN;
+        return refreshToken;
     }
 
     public About about() throws IOException {
@@ -310,7 +310,7 @@ public class GoogleDriveService {
     String requestRefreshToken(String code) throws IOException {
         try {
             GoogleAuthorizationCodeTokenRequest tokenRequest = authFlow.newTokenRequest(code);
-            tokenRequest.setRedirectUri(REDIRECT_URI);
+            tokenRequest.setRedirectUri(redirectUri);
             GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
             return googleTokenResponse.getRefreshToken();
         } catch (IOException e) {

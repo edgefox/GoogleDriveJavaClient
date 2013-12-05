@@ -25,10 +25,10 @@ public class TrackedPathProvider implements Provider<Path> {
     @Override
     public Path get() {
         if (trackedPath == null) {
-            if (StringUtils.isEmpty(configurationManager.getProperty("TRACKED_PATH"))) {
+            if (StringUtils.isEmpty(configurationManager.getProperty("trackedPath"))) {
                 trackedPath = setUpPath();
             } else {
-                trackedPath = Paths.get(configurationManager.getProperty("TRACKED_PATH"));
+                trackedPath = Paths.get(configurationManager.getProperty("trackedPath"));
             }
         }
         
@@ -48,7 +48,7 @@ public class TrackedPathProvider implements Provider<Path> {
         Scanner scanner = new Scanner(System.in);
         String newTrackedPath = scanner.nextLine();
         try {
-            configurationManager.updateProperties("TRACKED_PATH", newTrackedPath);
+            configurationManager.updateProperties("trackedPath", newTrackedPath);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

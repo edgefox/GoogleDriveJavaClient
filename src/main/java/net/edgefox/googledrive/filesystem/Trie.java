@@ -3,6 +3,7 @@ package net.edgefox.googledrive.filesystem;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -89,14 +90,14 @@ public class Trie<K, M> implements Serializable {
         return children.remove(key);
     }
 
-    public Trie<K, M> removeChild(Trie<K, M> node) {
-        return children.remove(node.getKey());
-    }
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Trie)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Trie)) {
+            return false;
+        }
 
         Trie trie = (Trie) o;
         return new EqualsBuilder().append(key, trie.key).build();
@@ -109,9 +110,9 @@ public class Trie<K, M> implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("key", key)
-                .append("model", model)
-                .append("children", children)
-                .build();
+        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).append("key", key)
+                                                                        .append("model", model)
+                                                                        .append("children", children)
+                                                                        .build();
     }
 }

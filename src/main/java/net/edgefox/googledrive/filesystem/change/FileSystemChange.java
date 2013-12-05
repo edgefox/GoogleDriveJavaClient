@@ -2,6 +2,10 @@ package net.edgefox.googledrive.filesystem.change;
 
 import com.google.api.services.drive.model.Change;
 import net.edgefox.googledrive.service.GoogleDriveUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * User: Ivan Lyutov
@@ -58,36 +62,29 @@ public class FileSystemChange<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof FileSystemChange)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof FileSystemChange)) {
+            return false;
+        }
 
         FileSystemChange that = (FileSystemChange) o;
 
-        if (dir != that.dir) return false;
-        if (!id.equals(that.id)) return false;
-        if (parentId != null ? !parentId.equals(that.parentId) : that.parentId != null) return false;
-
-        return true;
+        return new EqualsBuilder().append(dir, that.dir).
+                                   append(id, that.id).
+                                   append(parentId, that.parentId).build();
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + (parentId != null ? parentId.hashCode() : 0);
-        result = 31 * result + (dir ? 1 : 0);
-        return result;
+        return new HashCodeBuilder().append(id).
+                                     append(parentId).
+                                     append(dir).build();
     }
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("FileSystemChange{");
-        sb.append("id='").append(id).append('\'');
-        sb.append("parentId='").append(parentId).append('\'');
-        sb.append("title='").append(title).append('\'');
-        sb.append("dir='").append(dir).append('\'');
-        sb.append(", removed=").append(isRemoved());
-        sb.append(", md5CheckSum=").append(md5CheckSum);
-        sb.append('}');
-        return sb.toString();
+        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).build();
     }
 }
