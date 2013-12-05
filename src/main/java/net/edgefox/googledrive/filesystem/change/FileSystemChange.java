@@ -1,7 +1,7 @@
 package net.edgefox.googledrive.filesystem.change;
 
 import com.google.api.services.drive.model.Change;
-import net.edgefox.googledrive.service.GoogleDriveUtils;
+import net.edgefox.googledrive.util.GoogleDriveUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -32,7 +32,7 @@ public class FileSystemChange<T> {
         id = (T) change.getFileId();
         parentId = (T) GoogleDriveUtils.getParentId(change);
         title = change.getDeleted() ? null : change.getFile().getTitle();
-        dir = GoogleDriveUtils.getIsGoogleDir(change);
+        dir = GoogleDriveUtils.isGoogleDir(change);
         md5CheckSum = GoogleDriveUtils.getMd5CheckSumFromChange(change);
     }
 

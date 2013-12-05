@@ -1,7 +1,7 @@
 package net.edgefox.googledrive.filesystem;
 
 import com.google.api.services.drive.model.File;
-import net.edgefox.googledrive.service.GoogleDriveUtils;
+import net.edgefox.googledrive.util.GoogleDriveUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -28,7 +28,7 @@ public class FileMetadata implements Serializable {
     public FileMetadata(File driveFile) {
         id = driveFile.getId();
         title = driveFile.getTitle();
-        dir = GoogleDriveUtils.getIsGoogleDir(driveFile);
+        dir = GoogleDriveUtils.isGoogleDir(driveFile);
         checkSum = driveFile.getMd5Checksum();
     }
 

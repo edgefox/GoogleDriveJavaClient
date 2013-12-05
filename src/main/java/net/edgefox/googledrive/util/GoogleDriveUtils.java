@@ -1,4 +1,4 @@
-package net.edgefox.googledrive.service;
+package net.edgefox.googledrive.util;
 
 import com.google.api.services.drive.model.Change;
 import com.google.api.services.drive.model.File;
@@ -36,11 +36,11 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static boolean getIsGoogleDir(Change change) {
+    public static boolean isGoogleDir(Change change) {
         return !change.getDeleted() && GOOGLE_FOLDER.equals(change.getFile().getMimeType());
     }
 
-    public static boolean getIsGoogleDir(File file) {
+    public static boolean isGoogleDir(File file) {
         return GOOGLE_FOLDER.equals(file.getMimeType());
     }
 

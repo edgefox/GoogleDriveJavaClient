@@ -20,6 +20,7 @@ import com.google.inject.name.Named;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
+import net.edgefox.googledrive.util.GoogleDriveUtils;
 import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
