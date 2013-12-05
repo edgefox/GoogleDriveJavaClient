@@ -101,7 +101,7 @@ public class LocalChangesHandler {
         FileMetadata fileMetadata = googleDriveService.createOrGetDirectory(parentId, change.getTitle());
         fileSystem.update(change.getId(), fileMetadata);
         handledIds.add(fileMetadata.getId());
-        Notifier.showMessage("Local update", String.format("Created directory %s", change.getId()));
+        Notifier.showLocalChangeMessage( String.format("Created directory %s", change.getId()));
     }
 
     void deleteRemoteFile(Trie<String, FileMetadata> imageFile) throws IOException {
@@ -109,7 +109,7 @@ public class LocalChangesHandler {
         googleDriveService.delete(imageFile.getModel().getId());
         fileSystem.delete(imageFile);
         handledIds.add(imageFile.getModel().getId());
-        Notifier.showMessage("Local update", String.format("Deleted %s", pathToDelete));
+        Notifier.showLocalChangeMessage(String.format("Deleted %s", pathToDelete));
     }
 
     void uploadLocalFile(FileSystemChange<Path> change) throws IOException {
@@ -122,6 +122,6 @@ public class LocalChangesHandler {
                                                               change.getId().toFile());
         fileSystem.update(change.getId(), fileMetadata);
         handledIds.add(fileMetadata.getId());
-        Notifier.showMessage("Local update", String.format("File update %s", change.getId()));
+        Notifier.showLocalChangeMessage( String.format("File update %s", change.getId()));
     }
 }

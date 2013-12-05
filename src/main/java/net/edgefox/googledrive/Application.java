@@ -58,7 +58,7 @@ public class Application {
             System.out.println(String.format("Please follow the url to authorize the application: '%s'", authUrl));
             String newRefreshToken = googleDriveService.handleRedirect();
             configurationManager.updateProperties("refreshToken", newRefreshToken);
-            Notifier.showMessage("System Notification", "Authorization succeeded. Starting application...");
+            Notifier.showSystemMessage("Authorization succeeded. Starting application...");
         }
     }
 }

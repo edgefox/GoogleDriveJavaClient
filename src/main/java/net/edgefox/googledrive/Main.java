@@ -66,7 +66,7 @@ public class Main extends AbstractModule {
             Main main = new Main();
             Injector injector = Guice.createInjector(main);
             injector.injectMembers(main);
-            Notifier.showMessage("System notification", "Application is up and active.");
+            Notifier.showSystemMessage("Application is up and active.");
         } catch (Exception e) {
             logger.error("Application crashed", e);
             throw e;

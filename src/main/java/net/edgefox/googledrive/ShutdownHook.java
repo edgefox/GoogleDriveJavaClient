@@ -21,7 +21,7 @@ public class ShutdownHook implements Runnable {
 
     @Override
     public void run() {
-        Notifier.showMessage("System notification", "Application is going down");
+        Notifier.showSystemMessage("Application is going down");
         fileSystem.lockForShutdown();
         applicationThreadPool.shutdownNow();
     }

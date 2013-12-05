@@ -14,9 +14,22 @@ import javax.swing.*;
  */
 public class Notifier {
     
-    private Notifier() {}
+    private Notifier() {        
+    }
+    
+    public static void showRemoteChangeMessage(String message) {
+        showMessage("Remote update", message);
+    }
 
-    public static void showMessage(String title, String message) {
+    public static void showLocalChangeMessage(String message) {
+        showMessage("Local update", message);
+    }
+
+    public static void showSystemMessage(String message) {
+        showMessage("System notification", message);
+    }
+
+    private static void showMessage(String title, String message) {
         System.setProperty("swing.aatext", "true");
 
         INotificationStyle style = new DarkDefaultNotification()
