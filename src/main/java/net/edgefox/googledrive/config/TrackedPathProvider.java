@@ -2,17 +2,15 @@ package net.edgefox.googledrive.config;
 
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
-import static net.edgefox.googledrive.util.IOUtils.*;
+import static net.edgefox.googledrive.util.IOUtils.safeCreateDirectory;
 
 /**
  * User: Ivan Lyutov

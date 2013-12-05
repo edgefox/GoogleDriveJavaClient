@@ -4,7 +4,6 @@ import com.google.inject.Singleton;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
 import net.edgefox.googledrive.service.GoogleDriveService;
-import net.edgefox.googledrive.util.IOUtils;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 
@@ -17,7 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static net.edgefox.googledrive.util.IOUtils.*;
+import static net.edgefox.googledrive.util.IOUtils.safeCreateDirectory;
 
 /**
  * User: Ivan Lyutov

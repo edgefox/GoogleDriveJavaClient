@@ -1,16 +1,16 @@
 package net.edgefox.googledrive.filesystem.change.local;
 
-import javax.inject.Singleton;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;
+import net.edgefox.googledrive.service.GoogleDriveService;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.log4j.Logger;
-import net.edgefox.googledrive.service.GoogleDriveService;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;

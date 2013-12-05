@@ -1,8 +1,8 @@
 package net.edgefox.googledrive.config;
 
-import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.inject.Singleton;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;

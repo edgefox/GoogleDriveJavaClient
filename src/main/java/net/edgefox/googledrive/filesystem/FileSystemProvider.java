@@ -2,14 +2,15 @@ package net.edgefox.googledrive.filesystem;
 
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import net.edgefox.googledrive.config.ConfigurationManager;
 import net.edgefox.googledrive.util.IOUtils;
 
 import javax.inject.Inject;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**

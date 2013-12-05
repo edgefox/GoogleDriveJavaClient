@@ -1,15 +1,14 @@
 package net.edgefox.googledrive.filesystem.change.remote;
 
-import javax.inject.Singleton;
-
 import com.google.api.services.drive.model.About;
 import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.change.ChangesWatcher;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
-import org.apache.log4j.Logger;
 import net.edgefox.googledrive.service.GoogleDriveService;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 

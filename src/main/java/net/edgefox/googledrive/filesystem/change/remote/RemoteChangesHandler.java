@@ -1,18 +1,17 @@
 package net.edgefox.googledrive.filesystem.change.remote;
 
-import javax.inject.Singleton;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
-import net.edgefox.googledrive.util.IOUtils;
+import net.edgefox.googledrive.service.GoogleDriveService;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import net.edgefox.googledrive.service.GoogleDriveService;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,8 +20,8 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.lang.String.*;
-import static net.edgefox.googledrive.util.IOUtils.*;
+import static java.lang.String.format;
+import static net.edgefox.googledrive.util.IOUtils.safeCreateDirectory;
 
 /**
  * User: Ivan Lyutov

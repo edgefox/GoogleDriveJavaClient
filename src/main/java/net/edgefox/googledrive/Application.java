@@ -8,7 +8,6 @@ import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;
 import net.edgefox.googledrive.service.GoogleDriveService;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

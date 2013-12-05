@@ -1,11 +1,11 @@
 package net.edgefox.googledrive.filesystem.change;
 
-import javax.inject.Singleton;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesHandler;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesHandler;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
