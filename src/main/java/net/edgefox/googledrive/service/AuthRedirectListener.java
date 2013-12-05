@@ -22,7 +22,6 @@ import java.io.IOException;
 public class AuthRedirectListener {
     @Inject
     private GoogleDriveService googleDriveService;
-    private String refreshToken;
     private Server server;
 
     private static final int DEFAULT_LISTENER_PORT = 9999;
@@ -45,7 +44,7 @@ public class AuthRedirectListener {
         wait();
         server.stop();
         
-        return refreshToken;
+        return redirectServlet.getRefreshToken();
     }
 
     AuthRedirectServlet getRedirectServlet() {
@@ -53,6 +52,8 @@ public class AuthRedirectListener {
     }
 
     class AuthRedirectServlet extends HttpServlet {
+        private String refreshToken;
+        
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
             synchronized (AuthRedirectListener.this) {
@@ -64,6 +65,10 @@ public class AuthRedirectListener {
                     AuthRedirectListener.this.notifyAll();
                 }
             }
+        }
+
+        String getRefreshToken() {
+            return refreshToken;
         }
     }
 }

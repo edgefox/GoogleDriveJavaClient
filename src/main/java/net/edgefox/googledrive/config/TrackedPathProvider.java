@@ -2,6 +2,7 @@ package net.edgefox.googledrive.config;
 
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
@@ -10,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+
+import static net.edgefox.googledrive.util.IOUtils.*;
 
 /**
  * User: Ivan Lyutov
@@ -21,7 +24,7 @@ public class TrackedPathProvider implements Provider<Path> {
     private static Path trackedPath;
     @Inject
     private ConfigurationManager configurationManager;
-    
+
     @Override
     public Path get() {
         if (trackedPath == null) {
@@ -31,15 +34,13 @@ public class TrackedPathProvider implements Provider<Path> {
                 trackedPath = Paths.get(configurationManager.getProperty("trackedPath"));
             }
         }
-        
-        if (!Files.exists(trackedPath)) {
-            try {
-                Files.createDirectories(trackedPath);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
+
+        try {
+            safeCreateDirectory(trackedPath);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
-        
+
         return trackedPath;
     }
 
