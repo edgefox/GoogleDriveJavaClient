@@ -34,13 +34,13 @@ public class Storage {
     private GoogleDriveService googleDriveService;
     
     public void checkout() throws IOException, InterruptedException {
-        Notifier.showMessage("System notification", "Trying to perform initial sync");
+        Notifier.showSystemMessage("Trying to perform initial sync");
         Set<File> handledFiles = checkoutRemote(GoogleDriveService.ROOT_DIR_ID, trackedPath);
         if (fileSystem.getFileSystemRevision() > 0L) {
             handleDeletedRemotely();
         }
         checkoutLocal(trackedPath.toFile(), handledFiles);
-        Notifier.showMessage("System notification", "Initial sync is completed");
+        Notifier.showSystemMessage("Initial sync is completed");
     }
 
     void handleDeletedRemotely() throws IOException {
