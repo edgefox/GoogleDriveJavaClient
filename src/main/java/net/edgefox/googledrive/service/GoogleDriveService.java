@@ -119,26 +119,28 @@ public class GoogleDriveService {
         try {
             logger.trace(format("Trying to upload local file: %s", localFile));
 
-            File file = new File();
+            File file = findChildFile(folderId, localFile.getName());
+            file = file == null ? new File() : file;
+            
             file.setTitle(localFile.getName());
             ParentReference parent = new ParentReference();
             parent.setId(folderId);
             file.setParents(Arrays.asList(parent));
             FileContent mediaContent = new FileContent(null, localFile);
 
-            FileMetadata child = findChild(folderId, localFile.getName());
-
-            if (child != null) {
-                if (child.getCheckSum() == null && !child.isDir()) {
-                    return child;
+            if (file.getId() != null) {
+                if (GoogleDriveUtils.isSupportedGoogleApp(file)) {
+                    return new FileMetadata(file);
                 }
-                File updatedFile = safeExecute(apiClient.files().update(child.getId(), file, mediaContent).setFields(FILE_REQUIRED_FIELDS));
+                Drive.Files.Update updateRequest = apiClient.files().update(file.getId(), file, mediaContent)
+                                                                    .setFields(FILE_REQUIRED_FIELDS);
+                File updatedFile = safeExecute(updateRequest);
                 logger.trace(format("File has been successfully uploaded: '%s'", localFile));
                 return new FileMetadata(updatedFile);
             }
 
-            Drive.Files.Insert insertedFile = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
-            File uploadedFile = safeExecute(insertedFile);
+            Drive.Files.Insert insertRequest = apiClient.files().insert(file, mediaContent).setFields(FILE_REQUIRED_FIELDS);
+            File uploadedFile = safeExecute(insertRequest);
             logger.trace(format("File has been successfully uploaded: '%s'", localFile));
 
             return new FileMetadata(uploadedFile);
@@ -202,22 +204,8 @@ public class GoogleDriveService {
     }
 
     public FileMetadata findChild(String folderId, String title) throws IOException {
-        try {
-            String format = format("title = '%s' and trashed = false and '%s' in parents", title, folderId);
-            Drive.Files.List list = apiClient.files().list()
-                    .setFields(FILE_LIST_REQUIRED_FIELDS)
-                    .setQ(format);
-            FileList children = safeExecute(list);
-            if (children.getItems().isEmpty()) {
-                return null;
-            }
-            String childId = children.getItems().get(0).getId();
-            Drive.Files.Get get = apiClient.files().get(childId).setFields(FILE_REQUIRED_FIELDS);
-            File file = safeExecute(get);
-            return new FileMetadata(file);
-        } catch (IOException e) {
-            throw new IOException(format("Failed to get child entry '%s' in remote folder '%s'", title, folderId), e);
-        }
+        File childFile = findChildFile(folderId, title);
+        return childFile == null ? null : new FileMetadata(childFile);
     }
 
     public Set<String> getAllChildrenIds(String folderId) throws IOException {
@@ -333,6 +321,8 @@ public class GoogleDriveService {
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
                 timeout += TIMEOUT_STEP;
                 logger.warn("Request timeout. Retrying...", e);
+            } catch (IllegalArgumentException e) {
+                throw new IOException("Unable to complete request", e);
             }
         }
 
@@ -362,6 +352,24 @@ public class GoogleDriveService {
         }
 
         return response;
+    }
+
+    private File findChildFile(String folderId, String title) throws IOException {
+        try {
+            String format = format("title = '%s' and trashed = false and '%s' in parents", title, folderId);
+            Drive.Files.List list = apiClient.files().list()
+                    .setFields(FILE_LIST_REQUIRED_FIELDS)
+                    .setQ(format);
+            FileList children = safeExecute(list);
+            if (children.getItems().isEmpty()) {
+                return null;
+            }
+            String childId = children.getItems().get(0).getId();
+            Drive.Files.Get get = apiClient.files().get(childId).setFields(FILE_REQUIRED_FIELDS);
+            return safeExecute(get);
+        } catch (IOException e) {
+            throw new IOException(format("Failed to get child entry '%s' in remote folder '%s'", title, folderId), e);
+        }
     }
 
     private GenericUrl getGenericUrl(File file) {

@@ -85,6 +85,10 @@ public class FileSystemChange<T> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).build();
+        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).append(id)
+                                                                        .append(dir)
+                                                                        .append(parentId)
+                                                                        .append(title)
+                                                                        .append(md5CheckSum).build();
     }
 }

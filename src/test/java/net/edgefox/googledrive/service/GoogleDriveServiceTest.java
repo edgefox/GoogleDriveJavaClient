@@ -28,7 +28,6 @@ import static junit.framework.Assert.*;
  * Date: 11/19/13
  * Time: 12:21 PM
  */
-@Ignore
 //Create application config in test resources directory with refreshToken specified to run this test
 public class GoogleDriveServiceTest {
     @Mock

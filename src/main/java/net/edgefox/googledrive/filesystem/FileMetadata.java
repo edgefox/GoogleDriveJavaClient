@@ -58,6 +58,9 @@ public class FileMetadata implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).build();
+        return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).append(id)
+                                                                        .append(title)
+                                                                        .append(dir)
+                                                                        .append(checkSum).build();
     }
 }
