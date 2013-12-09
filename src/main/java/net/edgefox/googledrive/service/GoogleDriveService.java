@@ -321,8 +321,6 @@ public class GoogleDriveService {
             } catch (SocketTimeoutException | GoogleJsonResponseException e) {
                 timeout += TIMEOUT_STEP;
                 logger.warn("Request timeout. Retrying...", e);
-            } catch (IllegalArgumentException e) {
-                throw new IOException("Unable to complete request", e);
             }
         }
 
@@ -341,7 +339,7 @@ public class GoogleDriveService {
                 response = apiClient.getRequestFactory()
                         .buildGetRequest(downloadUrl)
                         .execute();
-            } catch (SocketTimeoutException | GoogleJsonResponseException e) {
+            } catch (SocketTimeoutException | GoogleJsonResponseException | IllegalArgumentException e) {
                 timeout += TIMEOUT_STEP;
                 logger.warn("Request timeout. Retrying...", e);
             }
