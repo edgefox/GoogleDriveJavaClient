@@ -16,6 +16,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.*;
+import com.google.api.services.drive.model.File;
 import com.google.inject.name.Named;
 import net.edgefox.googledrive.filesystem.FileMetadata;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
@@ -28,9 +29,7 @@ import org.apache.log4j.lf5.util.StreamUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.SocketTimeoutException;
 import java.util.*;
 
@@ -129,9 +128,10 @@ public class GoogleDriveService {
             FileContent mediaContent = new FileContent(null, localFile);
 
             if (file.getId() != null) {
-                if (GoogleDriveUtils.isSupportedGoogleApp(file)) {
+                if (!isUploadRequired(localFile, file)) {
                     return new FileMetadata(file);
                 }
+
                 Drive.Files.Update updateRequest = apiClient.files().update(file.getId(), file, mediaContent)
                                                                     .setFields(FILE_REQUIRED_FIELDS);
                 File updatedFile = safeExecute(updateRequest);
@@ -378,5 +378,18 @@ public class GoogleDriveService {
             downloadUrl = file.getDownloadUrl();
         }
         return new GenericUrl(downloadUrl);
+    }
+
+    private boolean isUploadRequired(java.io.File localFile, File file) throws IOException {
+        if (GoogleDriveUtils.isSupportedGoogleApp(file)) {
+            return false;
+        }
+        if (localFile.exists()) {
+            String md5CheckSum = IOUtils.getFileMd5CheckSum(localFile.toPath());
+            if (md5CheckSum.equals(file.getMd5Checksum())) {
+                return false;
+            }
+        }
+        return true;
     }
 }
