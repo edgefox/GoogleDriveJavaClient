@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.*;
@@ -39,6 +40,8 @@ public class RemoteChangesWatcherTest {
     private FileSystem fileSystem;
     @Spy
     private ScheduledExecutorService scheduledExecutorService;
+    @Spy
+    private Semaphore semaphore = new Semaphore(3);
     @InjectMocks
     private RemoteChangesWatcher remoteChangesWatcher;
     private FileSystemChange<String> file1 = new FileSystemChange<>(UUID.randomUUID().toString(),

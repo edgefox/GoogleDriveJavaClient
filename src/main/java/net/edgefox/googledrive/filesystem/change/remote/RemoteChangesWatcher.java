@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,6 +25,8 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
     private GoogleDriveService googleDriveService;
     @Inject
     private volatile FileSystem fileSystem;
+    @Inject
+    private Semaphore applicationSemaphore;
 
     public void start() throws IOException {
         logger.info("Trying to start RemoteChangesWatcher");
@@ -41,11 +44,16 @@ public class RemoteChangesWatcher extends ChangesWatcher<String> {
         @Override
         public void run() {
             try {
+                applicationSemaphore.acquire();
                 RemoteChangePackage remoteChangePackage = googleDriveService.getChanges(fileSystem.getFileSystemRevision());
                 changes.addAll(remoteChangePackage.getChanges());
                 fileSystem.updateFileSystemRevision(remoteChangePackage.getRevisionNumber());
             } catch (IOException e) {
                 logger.error("Error occurred while fetching new changes from GoogleDrive service", e);
+            } catch (InterruptedException e) {
+                logger.warn(e);
+            } finally {
+                applicationSemaphore.release();
             }
         }
     }

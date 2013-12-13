@@ -13,6 +13,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -29,6 +31,8 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
     private Path trackedPath;
     private WatchService watchService;
     private Map<WatchKey, Path> watchKeyToPath = new HashMap<>();
+    @Inject
+    private Semaphore applicationSemaphore;
 
     @Inject
     public LocalChangesWatcher(Path trackedPath) {
@@ -72,26 +76,31 @@ public class LocalChangesWatcher extends ChangesWatcher<Path> {
         @SuppressWarnings("unchecked")
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                WatchKey key;
                 try {
-                    key = watchService.take();
-                } catch (InterruptedException e) {
-                    logger.info("LocalChangesWatcher has been interrupted", e);
-                    return;
+                    WatchKey key;
+                    try {
+                        key = watchService.take();
+                        applicationSemaphore.acquire();
+                    } catch (InterruptedException e) {
+                        logger.info("LocalChangesWatcher has been interrupted", e);
+                        return;
+                    }
+    
+                    Path filePath = watchKeyToPath.get(key);
+                    if (filePath == null) {
+                        logger.warn("WatchKey not recognized!!");
+                        continue;
+                    }
+    
+                    List<WatchEvent<?>> watchEvents = key.pollEvents();
+                    for (WatchEvent<?> watchEvent : watchEvents) {
+                        handleEvent(filePath, (WatchEvent<Path>) watchEvent);
+                    }
+                    
+                    resetKey(key);
+                } finally {
+                    applicationSemaphore.release();
                 }
-
-                Path filePath = watchKeyToPath.get(key);
-                if (filePath == null) {
-                    logger.warn("WatchKey not recognized!!");
-                    continue;
-                }
-
-                List<WatchEvent<?>> watchEvents = key.pollEvents();
-                for (WatchEvent<?> watchEvent : watchEvents) {
-                    handleEvent(filePath, (WatchEvent<Path>) watchEvent);
-                }
-                
-                resetKey(key);
             }
         }
 

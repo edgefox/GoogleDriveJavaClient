@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,6 +24,8 @@ public class ChangesApplier {
     private RemoteChangesHandler remoteChangesHandler;
     @Inject
     private ScheduledExecutorService executorService;
+    @Inject
+    private Semaphore applicationSemaphore;
 
     public void start() {
         logger.info("Trying to start ChangesApplier");
@@ -34,10 +37,17 @@ public class ChangesApplier {
 
         @Override
         public void run() {
-            logger.info("Change merge iteration started");
-            localChangesHandler.handle();
-            remoteChangesHandler.handle();
-            logger.info("Change merge iteration ended");
+            try {
+                applicationSemaphore.acquire();
+                logger.info("Change merge iteration started");
+                localChangesHandler.handle();
+                remoteChangesHandler.handle();
+                logger.info("Change merge iteration ended");
+            } catch (InterruptedException e) {
+                logger.warn(e);
+            } finally {
+                applicationSemaphore.release();
+            }
         }
     }
 }

@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -37,6 +38,7 @@ public class Main extends AbstractModule {
         loadProperties(binder(), configManager);
         bind(FileSystem.class).toProvider(FileSystemProvider.class);
         bind(ScheduledExecutorService.class).toInstance(initApplicationThreadPool());
+        bind(Semaphore.class).toInstance(new Semaphore(3));
     }
 
     private ConfigurationManager initConfigurationManager() {

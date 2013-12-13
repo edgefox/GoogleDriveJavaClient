@@ -12,6 +12,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.times;
@@ -28,6 +29,8 @@ public class ChangesApplierTest {
     private LocalChangesHandler localChangesHandler;
     @Mock
     private RemoteChangesHandler remoteChangesHandler;
+    @Spy
+    private Semaphore semaphore = new Semaphore(3);
     @Spy
     private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
     @InjectMocks

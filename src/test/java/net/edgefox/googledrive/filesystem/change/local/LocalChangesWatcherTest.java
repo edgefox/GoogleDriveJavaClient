@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
@@ -29,6 +30,8 @@ public class LocalChangesWatcherTest {
     private Path trackedPath = Paths.get("/tmp/GoogleDrive");
     @Spy
     private ScheduledExecutorService scheduledExecutorService;
+    @Spy
+    private Semaphore semaphore = new Semaphore(3);
     @InjectMocks
     private LocalChangesWatcher localChangesWatcher;
 
