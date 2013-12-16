@@ -285,7 +285,6 @@ public class GoogleDriveService {
                     resultChanges.add(new FileSystemChange<String>(change));
                 }
                 request.setPageToken(changes.getNextPageToken());
-                request.setPageToken(null);
             } while (request.getPageToken() != null &&
                     request.getPageToken().length() > 0);
 
