@@ -226,21 +226,17 @@ public class GoogleDriveService {
 
     public List<FileMetadata> listDirectory(String folderId) throws IOException {
         try {
-            Drive.Children.List list = apiClient.children().list(folderId)
-                    .setQ(format("trashed = false and '%s' in parents", folderId));
-            ChildList children = safeExecute(list);
-            List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
-            for (ChildReference childReference : children.getItems()) {
-                Drive.Files.Get get = apiClient.files().get(childReference.getId()).setFields(FILE_REQUIRED_FIELDS);
-                File file = safeExecute(get);
-                if (!GoogleDriveUtils.isRestrictedGoogleApp(file)) {
-                    resultList.add(new FileMetadata(file));
-                }
-            }
-
-            return resultList;
+            return search(format("trashed=true and '%s' in parents", folderId));
         } catch (IOException e) {
             throw new IOException(format("Failed to list child entries in remote folder '%s'", folderId), e);
+        }
+    }
+
+    public List<FileMetadata> listSharedFiles() throws IOException {
+        try {
+            return search("trashed=true and sharedWithMe=true");
+        } catch (IOException e) {
+            throw new IOException("Failed to list shared files", e);
         }
     }
 
@@ -277,7 +273,10 @@ public class GoogleDriveService {
     public RemoteChangePackage getChanges(long revisionNumber) throws IOException {
         try {
             Set<FileSystemChange<String>> resultChanges = new LinkedHashSet<>();
-            Drive.Changes.List request = apiClient.changes().list().setFields(DELTA_FIELDS_ALL_INFO).setIncludeSubscribed(false);
+            Drive.Changes.List request = apiClient.changes()
+                                                  .list()
+                                                  .setFields(DELTA_FIELDS_ALL_INFO)
+                                                  .setIncludeSubscribed(true);
             request.setStartChangeId(++revisionNumber);
             do {
                 ChangeList changes = safeExecute(request);
@@ -350,6 +349,21 @@ public class GoogleDriveService {
         }
 
         return response;
+    }
+
+    private List<FileMetadata> search(String searchQuery) throws IOException {
+        Drive.Files.List list = apiClient.files().list()
+                                                 .setQ(searchQuery)
+                                                 .setFields(FILE_LIST_REQUIRED_FIELDS);
+        FileList children = safeExecute(list);
+        List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
+        for (File file : children.getItems()) {
+            if (!GoogleDriveUtils.isRestrictedGoogleApp(file)) {
+                resultList.add(new FileMetadata(file));
+            }
+        }
+
+        return resultList;
     }
 
     private File findChildFile(String folderId, String title) throws IOException {
