@@ -59,7 +59,7 @@ public class GoogleDriveService {
     private String refreshToken;
     private GoogleAuthorizationCodeFlow authFlow;
 
-    private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum)";
+    private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum,parents)";
     private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title,md5Checksum,etag";
     private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks,md5Checksum,etag";
 
@@ -226,15 +226,26 @@ public class GoogleDriveService {
 
     public List<FileMetadata> listDirectory(String folderId) throws IOException {
         try {
-            return search(format("trashed=true and '%s' in parents", folderId));
+            String query = format("trashed=false and '%s' in parents", folderId);
+            return convertToFileMetadata(search(query));
         } catch (IOException e) {
             throw new IOException(format("Failed to list child entries in remote folder '%s'", folderId), e);
         }
     }
 
-    public List<FileMetadata> listSharedFiles() throws IOException {
+    public List<FileMetadata> listSharedOrphanFiles() throws IOException {
         try {
-            return search("trashed=true and sharedWithMe=true");
+            String query = "trashed=false and sharedWithMe=true";
+            FileList fileList = search(query);
+            List<File> nonOrphanFiles = new ArrayList<>();
+            for (File file : fileList.getItems()) {
+                if (!file.getParents().isEmpty()) {
+                    nonOrphanFiles.add(file);
+                }
+            }
+            fileList.getItems().removeAll(nonOrphanFiles);
+            
+            return convertToFileMetadata(fileList);
         } catch (IOException e) {
             throw new IOException("Failed to list shared files", e);
         }
@@ -350,19 +361,11 @@ public class GoogleDriveService {
         return response;
     }
 
-    private List<FileMetadata> search(String searchQuery) throws IOException {
+    private FileList search(String searchQuery) throws IOException {
         Drive.Files.List list = apiClient.files().list()
                                                  .setQ(searchQuery)
                                                  .setFields(FILE_LIST_REQUIRED_FIELDS);
-        FileList children = safeExecute(list);
-        List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
-        for (File file : children.getItems()) {
-            if (!GoogleDriveUtils.isRestrictedGoogleApp(file)) {
-                resultList.add(new FileMetadata(file));
-            }
-        }
-
-        return resultList;
+        return safeExecute(list);
     }
 
     private File findChildFile(String folderId, String title) throws IOException {
@@ -391,6 +394,17 @@ public class GoogleDriveService {
             downloadUrl = file.getDownloadUrl();
         }
         return new GenericUrl(downloadUrl);
+    }
+
+    private List<FileMetadata> convertToFileMetadata(FileList children) {
+        List<FileMetadata> resultList = new ArrayList<>(children.getItems().size());
+        for (File file : children.getItems()) {
+            if (!GoogleDriveUtils.isRestrictedGoogleApp(file)) {
+                resultList.add(new FileMetadata(file));
+            }
+        }
+
+        return resultList;
     }
 
     private boolean isUploadRequired(java.io.File localFile, File file) throws IOException {

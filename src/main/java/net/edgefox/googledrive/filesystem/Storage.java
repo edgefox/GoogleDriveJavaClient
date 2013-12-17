@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static net.edgefox.googledrive.util.IOUtils.getFileMd5CheckSum;
 import static net.edgefox.googledrive.util.IOUtils.safeCreateDirectory;
 
 /**
@@ -31,13 +32,17 @@ public class Storage {
     private FileSystem fileSystem;
     @Inject
     private GoogleDriveService googleDriveService;
+    private Path sharedRootPath;
     
     public void checkout() throws IOException, InterruptedException {
         Notifier.showSystemMessage("Trying to perform initial sync");
+        sharedRootPath = trackedPath.resolve("Shared with me");
         Set<File> handledFiles = checkoutRemote(GoogleDriveService.ROOT_DIR_ID, trackedPath);
+        checkoutShared(handledFiles);
         if (fileSystem.getFileSystemRevision() > 0L) {
             handleDeletedRemotely();
         }
+        handledFiles.add(sharedRootPath.toFile());
         checkoutLocal(trackedPath.toFile(), handledFiles);
         Notifier.showSystemMessage("Initial sync is completed");
     }
@@ -46,18 +51,24 @@ public class Storage {
         RemoteChangePackage changes = googleDriveService.getChanges(fileSystem.getFileSystemRevision());
         for (FileSystemChange<String> change : changes.getChanges()) {
             if (change.isRemoved()) {
-                Path path = fileSystem.getPath(fileSystem.get(change.getId()));
-                if (Files.exists(path)) {
-                    FileUtils.forceDelete(path.toFile());
+                Trie<String, FileMetadata> entry = fileSystem.get(change.getId());
+                if (entry != null) {
+                    Path path = fileSystem.getPath(entry);
+                    if (Files.exists(path)) {
+                        FileUtils.forceDelete(path.toFile());
+                    }
+                    fileSystem.delete(path);
                 }
-                fileSystem.delete(path);
             }
         }
     }
 
     Set<File> checkoutRemote(String id, Path path) throws IOException, InterruptedException {
-        List<FileMetadata> root = googleDriveService.listDirectory(id);
         Set<File> handledFiles = new HashSet<>();
+        if (sharedRootPath.equals(path)) {
+            return handledFiles;
+        }
+        List<FileMetadata> root = googleDriveService.listDirectory(id);
         for (FileMetadata remoteMetadata : root) {
             Path childPath = path.resolve(remoteMetadata.getTitle());
             Trie<String,FileMetadata> imageFile = fileSystem.get(remoteMetadata.getId());
@@ -73,7 +84,7 @@ public class Storage {
 
             if (remoteMetadata.isDir()) {
                 safeCreateDirectory(childPath);
-                checkoutRemote(remoteMetadata.getId(), childPath);
+                handledFiles.addAll(checkoutRemote(remoteMetadata.getId(), childPath));
             } else if (!Files.exists(childPath) ||
                     localMetadata.getCheckSum() == null ||
                     !localMetadata.getCheckSum().equals(remoteMetadata.getCheckSum())) {
@@ -83,7 +94,29 @@ public class Storage {
         }
 
         return handledFiles;
-    }       
+    }
+    
+    void checkoutShared(Set<File> handledFiles) throws IOException, InterruptedException {
+        initSharedStorage();
+
+        List<FileMetadata> sharedFiles = googleDriveService.listSharedOrphanFiles();
+        for (FileMetadata sharedFile : sharedFiles) {
+            Path filePath = sharedRootPath.resolve(sharedFile.getTitle());
+            Trie<String, FileMetadata> imageFile = fileSystem.get(sharedFile.getId());
+            if (imageFile == null) {
+                fileSystem.update(filePath, sharedFile);
+            }
+            if (sharedFile.isDir()) {
+                safeCreateDirectory(filePath);
+                handledFiles.addAll(checkoutRemote(sharedFile.getId(), filePath));
+            } else if (!Files.exists(filePath) ||
+                       sharedFile.getCheckSum() == null ||
+                       !getFileMd5CheckSum(filePath).equals(sharedFile.getCheckSum())) {
+                googleDriveService.downloadFile(sharedFile.getId(), filePath.toFile());
+            }
+            handledFiles.add(filePath.toFile());
+        }
+    }
 
     void checkoutLocal(File parentFile, Set<File> handledFiles) throws IOException {
         File[] files = parentFile.listFiles();
@@ -123,5 +156,14 @@ public class Storage {
                 }
             }
         }
+    }
+
+    private void initSharedStorage() throws IOException {
+        Trie<String, FileMetadata> sharedRoot = fileSystem.get("shared");
+        if (sharedRoot == null) {
+            fileSystem.update(sharedRootPath, new FileMetadata("shared", "Shared with me", true, null));
+        }
+
+        safeCreateDirectory(sharedRootPath);
     }
 }

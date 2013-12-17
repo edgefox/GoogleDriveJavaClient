@@ -66,7 +66,15 @@ public class GoogleDriveUtils {
         }
 
         List<ParentReference> parents = change.getFile().getParents();
-        ParentReference parentReference = parents.get(0);
+        ParentReference parentReference;
+        if (parents.isEmpty()) {
+            parentReference = new ParentReference();
+            parentReference.setId("shared");
+            parentReference.setIsRoot(false);
+        }
+        else {
+            parentReference = parents.get(0);
+        }
 
         return parentReference.getIsRoot() ? GoogleDriveService.ROOT_DIR_ID : parentReference.getId();
     }
