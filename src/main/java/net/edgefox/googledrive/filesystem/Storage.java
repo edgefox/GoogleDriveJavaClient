@@ -65,7 +65,7 @@ public class Storage {
 
     Set<File> checkoutRemote(String id, Path path) throws IOException, InterruptedException {
         Set<File> handledFiles = new HashSet<>();
-        if (sharedRootPath.equals(path)) {
+        if (Files.isSameFile(sharedRootPath, path)) {
             return handledFiles;
         }
         List<FileMetadata> root = googleDriveService.listDirectory(id);
@@ -125,7 +125,7 @@ public class Storage {
         }
 
         for (File file : files) {
-            if (handledFiles.contains(file)) {
+            if (handledFiles.contains(file) || file.toPath().startsWith(sharedRootPath)) {
                 if (file.isDirectory()) {
                     checkoutLocal(file, handledFiles);
                 }
