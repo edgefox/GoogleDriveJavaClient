@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.*;
 
@@ -164,6 +165,10 @@ public class GoogleDriveServiceTest {
         Long largestChangeId = googleDriveService.about().getLargestChangeId();
 
         googleDriveService.upload(GoogleDriveService.ROOT_DIR_ID, file1);
+
+        //It seems that Google does not update changes immediately
+        //Sorry for this spike, guys
+        TimeUnit.SECONDS.sleep(5);
         
         RemoteChangePackage changes = googleDriveService.getChanges(largestChangeId);
         assertEquals(1, changes.getChanges().size());
