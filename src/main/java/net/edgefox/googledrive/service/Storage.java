@@ -1,9 +1,13 @@
-package net.edgefox.googledrive.filesystem;
+package net.edgefox.googledrive.service;
 
+import com.google.api.services.drive.model.ParentReference;
 import com.google.inject.Singleton;
+import net.edgefox.googledrive.filesystem.FileMetadata;
+import net.edgefox.googledrive.filesystem.FileSystem;
+import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
-import net.edgefox.googledrive.service.GoogleDriveService;
+import net.edgefox.googledrive.util.GoogleDriveUtils;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 
@@ -13,9 +17,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static net.edgefox.googledrive.util.GoogleDriveUtils.*;
 import static net.edgefox.googledrive.util.IOUtils.getFileMd5CheckSum;
 import static net.edgefox.googledrive.util.IOUtils.safeCreateDirectory;
 
@@ -33,12 +38,12 @@ public class Storage {
     @Inject
     private GoogleDriveService googleDriveService;
     private Path sharedRootPath;
-    
+
     public void checkout() throws IOException, InterruptedException {
         Notifier.showSystemMessage("Trying to perform initial sync");
-        sharedRootPath = trackedPath.resolve("Shared with me");
-        Set<File> handledFiles = checkoutRemote(GoogleDriveService.ROOT_DIR_ID, trackedPath);
-        checkoutShared(handledFiles);
+        initSharedStorage();
+        Map<String, com.google.api.services.drive.model.File> remoteFileRegistry = googleDriveService.listAllFiles();
+        Set<File> handledFiles = checkoutRemote(remoteFileRegistry);
         if (fileSystem.getFileSystemRevision() > 0L) {
             handleDeletedRemotely();
         }
@@ -63,59 +68,25 @@ public class Storage {
         }
     }
 
-    Set<File> checkoutRemote(String id, Path path) throws IOException, InterruptedException {
-        Set<File> handledFiles = new HashSet<>();
-        if (Files.isSameFile(sharedRootPath, path)) {
-            return handledFiles;
-        }
-        List<FileMetadata> root = googleDriveService.listDirectory(id);
-        for (FileMetadata remoteMetadata : root) {
-            Path childPath = path.resolve(remoteMetadata.getTitle());
-            Trie<String,FileMetadata> imageFile = fileSystem.get(remoteMetadata.getId());
-            FileMetadata localMetadata;
-            if (imageFile == null) {
-                localMetadata = remoteMetadata;
-                fileSystem.update(childPath, remoteMetadata);
+    Set<File> checkoutRemote(Map<String, com.google.api.services.drive.model.File> fileRegistry) throws IOException {
+        Set<File> processedFiles = new HashSet<>();
+        for (Map.Entry<String, com.google.api.services.drive.model.File> remoteEntry : fileRegistry.entrySet()) {
+            com.google.api.services.drive.model.File remoteFile = remoteEntry.getValue();
+            Trie<String, FileMetadata> entry = ensureEntry(remoteFile, fileRegistry);
+            Path fullPath = fileSystem.getFullPath(entry);
+            processedFiles.add(fullPath.toFile());
+            if (isGoogleDir(remoteFile)) {
+                safeCreateDirectory(fullPath);
             } else {
-                localMetadata = imageFile.getModel();
-                imageFile.setModel(remoteMetadata);
-                fileSystem.addRemoteId(remoteMetadata.getId(), imageFile);
+                if (!isRestrictedGoogleApp(remoteFile) && 
+                    (Files.notExists(fullPath) || !getFileMd5CheckSum(fullPath).equals(remoteFile.getMd5Checksum()))) {
+                    googleDriveService.downloadFile(remoteFile.getId(), fullPath.toFile());
+                    entry.setModel(new FileMetadata(remoteFile));
+                }
             }
-
-            if (remoteMetadata.isDir()) {
-                safeCreateDirectory(childPath);
-                handledFiles.addAll(checkoutRemote(remoteMetadata.getId(), childPath));
-            } else if (!Files.exists(childPath) ||
-                    localMetadata.getCheckSum() == null ||
-                    !localMetadata.getCheckSum().equals(remoteMetadata.getCheckSum())) {
-                googleDriveService.downloadFile(remoteMetadata.getId(), childPath.toFile());
-            }
-            handledFiles.add(childPath.toFile());
         }
 
-        return handledFiles;
-    }
-    
-    void checkoutShared(Set<File> handledFiles) throws IOException, InterruptedException {
-        initSharedStorage();
-
-        List<FileMetadata> sharedFiles = googleDriveService.listSharedOrphanFiles();
-        for (FileMetadata sharedFile : sharedFiles) {
-            Path filePath = sharedRootPath.resolve(sharedFile.getTitle());
-            Trie<String, FileMetadata> imageFile = fileSystem.get(sharedFile.getId());
-            if (imageFile == null) {
-                fileSystem.update(filePath, sharedFile);
-            }
-            if (sharedFile.isDir()) {
-                safeCreateDirectory(filePath);
-                handledFiles.addAll(checkoutRemote(sharedFile.getId(), filePath));
-            } else if (!Files.exists(filePath) ||
-                       sharedFile.getCheckSum() == null ||
-                       !getFileMd5CheckSum(filePath).equals(sharedFile.getCheckSum())) {
-                googleDriveService.downloadFile(sharedFile.getId(), filePath.toFile());
-            }
-            handledFiles.add(filePath.toFile());
-        }
+        return processedFiles;
     }
 
     void checkoutLocal(File parentFile, Set<File> handledFiles) throws IOException {
@@ -158,7 +129,50 @@ public class Storage {
         }
     }
 
+    private Trie<String, FileMetadata> ensureEntry(com.google.api.services.drive.model.File remoteFile,
+                                                   Map<String, com.google.api.services.drive.model.File> fileRegistry) throws IOException {
+        Trie<String, FileMetadata> entry = fileSystem.get(remoteFile.getId());
+        String parentId;
+        if (remoteFile.getParents().isEmpty()) {
+            parentId = "shared";
+        } else {
+            ParentReference parentReference = remoteFile.getParents().get(0);
+            parentId = parentReference.getIsRoot() ?
+                       GoogleDriveService.ROOT_DIR_ID :
+                       parentReference.getId();
+        }
+
+        Trie<String, FileMetadata> parentEntry;
+        if (GoogleDriveService.ROOT_DIR_ID.equals(parentId) || 
+            "shared".equals(parentId)) {
+            parentEntry = fileSystem.get(parentId);
+        } else {
+            if (fileRegistry.containsKey(parentId)) {
+                parentEntry = ensureEntry(fileRegistry.get(parentId), fileRegistry);
+            } else {
+                parentEntry = fileSystem.get("shared");
+            }
+        }
+        if (entry == null) {
+            Path fullParentPath = fileSystem.getFullPath(parentEntry);
+            fileSystem.update(fullParentPath.resolve(remoteFile.getTitle()), new FileMetadata(remoteFile));
+            entry = fileSystem.get(remoteFile.getId());
+        }
+
+        Path fullPath = fileSystem.getFullPath(entry);
+        if (!entry.getParent().getModel().getId().equals(parentId)) {
+            fileSystem.move(entry, parentEntry);
+            Path newPath = fileSystem.getFullPath(parentEntry).resolve(remoteFile.getTitle());
+            if (Files.exists(fullPath)) {
+                Files.move(fullPath, newPath);
+            }
+        }
+
+        return entry;
+    }
+
     private void initSharedStorage() throws IOException {
+        sharedRootPath = trackedPath.resolve("Shared with me");
         Trie<String, FileMetadata> sharedRoot = fileSystem.get("shared");
         if (sharedRoot == null) {
             fileSystem.update(sharedRootPath, new FileMetadata("shared", "Shared with me", true, null));

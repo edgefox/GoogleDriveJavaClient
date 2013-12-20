@@ -1,7 +1,7 @@
 package net.edgefox.googledrive;
 
 import net.edgefox.googledrive.config.ConfigurationManager;
-import net.edgefox.googledrive.filesystem.Storage;
+import net.edgefox.googledrive.service.Storage;
 import net.edgefox.googledrive.filesystem.change.ChangesApplier;
 import net.edgefox.googledrive.filesystem.change.local.LocalChangesWatcher;
 import net.edgefox.googledrive.filesystem.change.remote.RemoteChangesWatcher;

@@ -51,8 +51,8 @@ public class IOUtils {
     }
 
     public static void safeCreateDirectory(Path newDirectoryPath) throws IOException {
-        if (!Files.exists(newDirectoryPath)) {
-            Files.createDirectory(newDirectoryPath);
+        if (Files.notExists(newDirectoryPath)) {
+            Files.createDirectories(newDirectoryPath);
         }
     }
 }

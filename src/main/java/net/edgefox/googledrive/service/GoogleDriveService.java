@@ -24,6 +24,7 @@ import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
 import net.edgefox.googledrive.util.GoogleDriveUtils;
 import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.NoHttpResponseException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.lf5.util.StreamUtils;
 
@@ -109,7 +110,7 @@ public class GoogleDriveService {
         try {
             Drive.About.Get about = apiClient.about().get();
             return safeExecute(about.setFields(DELTA_FIELDS_ONLY_ID));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException("Failed to get account info", e);
         }
     }
@@ -144,7 +145,7 @@ public class GoogleDriveService {
             logger.trace(format("File has been successfully uploaded: '%s'", localFile));
 
             return new FileMetadata(uploadedFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to upload file %s to remote directory '%s'", localFile, folderId), e);
         }
     }
@@ -155,7 +156,7 @@ public class GoogleDriveService {
             Drive.Files.Delete delete = apiClient.files().delete(id);
             safeExecute(delete);
             logger.trace(format("Resource with id '%s' has been successfully deleted from remote storage", id));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to delete remote file '%s'", id), e);
         }
     }
@@ -168,7 +169,7 @@ public class GoogleDriveService {
             logger.trace(format("Metadata for resource with id '%s' has been successfully retrieved", id));
 
             return new FileMetadata(file);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to get metadata for remote file '%s'", id), e);
         }
     }
@@ -189,7 +190,7 @@ public class GoogleDriveService {
             logger.trace(format("Remote directory '%s' has been successfully created", name));
 
             return new FileMetadata(createdDirectory);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to create new directory '%s' at '%s'", name, parentId), e);
         }
     }
@@ -219,7 +220,7 @@ public class GoogleDriveService {
             }
 
             return result;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to get all child entries ids of remote folder '%s'", folderId), e);
         }
     }
@@ -228,26 +229,8 @@ public class GoogleDriveService {
         try {
             String query = format("trashed=false and '%s' in parents", folderId);
             return convertToFileMetadata(search(query));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to list child entries in remote folder '%s'", folderId), e);
-        }
-    }
-
-    public List<FileMetadata> listSharedOrphanFiles() throws IOException {
-        try {
-            String query = "trashed=false and sharedWithMe=true";
-            FileList fileList = search(query);
-            List<File> nonOrphanFiles = new ArrayList<>();
-            for (File file : fileList.getItems()) {
-                if (!file.getParents().isEmpty()) {
-                    nonOrphanFiles.add(file);
-                }
-            }
-            fileList.getItems().removeAll(nonOrphanFiles);
-            
-            return convertToFileMetadata(fileList);
-        } catch (IOException e) {
-            throw new IOException("Failed to list shared files", e);
         }
     }
 
@@ -276,7 +259,7 @@ public class GoogleDriveService {
             logger.trace(format("File has been successfully downloaded: %s", localFile));
 
             return new FileMetadata(file);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to download remote file '%s' to '%s'", id, localFile), e);
         }
     }
@@ -300,7 +283,7 @@ public class GoogleDriveService {
                     request.getPageToken().length() > 0);
 
             return new RemoteChangePackage(revisionNumber, resultChanges);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to get remote changes with revision '%s'", revisionNumber), e);
         }
     }
@@ -311,9 +294,29 @@ public class GoogleDriveService {
             tokenRequest.setRedirectUri(redirectUri);
             GoogleTokenResponse googleTokenResponse = tokenRequest.execute();
             return googleTokenResponse.getRefreshToken();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to get refresh token with code '%s'", code), e);
         }
+    }
+
+    Map<String, File> listAllFiles() throws IOException {
+        Map<String, File> fileSystem = new HashMap<>();
+        Drive.Files.List request = apiClient.files()
+                .list()
+                .setFields(FILE_LIST_REQUIRED_FIELDS)
+                .setQ("trashed=false")
+                .setMaxResults(1000);
+        String nextPageToken = null;
+        do {
+            request.setPageToken(nextPageToken);
+            FileList response = safeExecute(request);
+            for (File file : response.getItems()) {
+                fileSystem.put(file.getId(), file);
+            }
+            nextPageToken = response.getNextPageToken();
+        } while (nextPageToken != null);
+
+        return fileSystem;
     }
 
     private static <T> T safeExecute(AbstractGoogleClientRequest<T> request) throws IOException {
@@ -348,7 +351,7 @@ public class GoogleDriveService {
                 response = apiClient.getRequestFactory()
                         .buildGetRequest(downloadUrl)
                         .execute();
-            } catch (SocketTimeoutException | GoogleJsonResponseException | IllegalArgumentException e) {
+            } catch (SocketTimeoutException | GoogleJsonResponseException | NoHttpResponseException e) {
                 timeout += TIMEOUT_STEP;
                 logger.warn("Request timeout. Retrying...", e);
             }
@@ -381,7 +384,7 @@ public class GoogleDriveService {
             String childId = children.getItems().get(0).getId();
             Drive.Files.Get get = apiClient.files().get(childId).setFields(FILE_REQUIRED_FIELDS);
             return safeExecute(get);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IOException(format("Failed to get child entry '%s' in remote folder '%s'", title, folderId), e);
         }
     }

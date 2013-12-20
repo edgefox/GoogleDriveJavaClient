@@ -47,16 +47,15 @@ public class GoogleDriveUtils {
     public static boolean isSupportedGoogleApp(File file) {
         return GOOGLE_DOC.equals(file.getMimeType()) ||
                SPREADSHEET.equals(file.getMimeType()) ||
-               PRESENTATION.equals(file.getMimeType());
+               PRESENTATION.equals(file.getMimeType()) ||
+               GOOGLE_DRAWING.equals(file.getMimeType());
     }
     
     public static boolean isRestrictedGoogleApp(File file) {
-        return GOOGLE_DRAWING.equals(file.getMimeType()) ||
-               GOOGLE_SCRIPT.equals(file.getMimeType()) ||
+        return GOOGLE_SCRIPT.equals(file.getMimeType()) ||
                GOOGLE_SITE.equals(file.getMimeType()) ||
                GOOGLE_FUSION_TABLE.equals(file.getMimeType()) ||
                GOOGLE_FORM.equals(file.getMimeType());
-
     }
 
     public static String getParentId(Change change) {
