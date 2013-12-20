@@ -7,7 +7,6 @@ import net.edgefox.googledrive.filesystem.FileSystem;
 import net.edgefox.googledrive.filesystem.Trie;
 import net.edgefox.googledrive.filesystem.change.FileSystemChange;
 import net.edgefox.googledrive.filesystem.change.RemoteChangePackage;
-import net.edgefox.googledrive.util.GoogleDriveUtils;
 import net.edgefox.googledrive.util.Notifier;
 import org.apache.commons.io.FileUtils;
 
@@ -38,6 +37,7 @@ public class Storage {
     @Inject
     private GoogleDriveService googleDriveService;
     private Path sharedRootPath;
+    private static final String SHARED_FOLDER_ID = "shared";
 
     public void checkout() throws IOException, InterruptedException {
         Notifier.showSystemMessage("Trying to perform initial sync");
@@ -134,7 +134,7 @@ public class Storage {
         Trie<String, FileMetadata> entry = fileSystem.get(remoteFile.getId());
         String parentId;
         if (remoteFile.getParents().isEmpty()) {
-            parentId = "shared";
+            parentId = SHARED_FOLDER_ID;
         } else {
             ParentReference parentReference = remoteFile.getParents().get(0);
             parentId = parentReference.getIsRoot() ?
@@ -144,13 +144,13 @@ public class Storage {
 
         Trie<String, FileMetadata> parentEntry;
         if (GoogleDriveService.ROOT_DIR_ID.equals(parentId) || 
-            "shared".equals(parentId)) {
+            SHARED_FOLDER_ID.equals(parentId)) {
             parentEntry = fileSystem.get(parentId);
         } else {
             if (fileRegistry.containsKey(parentId)) {
                 parentEntry = ensureEntry(fileRegistry.get(parentId), fileRegistry);
             } else {
-                parentEntry = fileSystem.get("shared");
+                parentEntry = fileSystem.get(SHARED_FOLDER_ID);
             }
         }
         if (entry == null) {
@@ -173,9 +173,9 @@ public class Storage {
 
     private void initSharedStorage() throws IOException {
         sharedRootPath = trackedPath.resolve("Shared with me");
-        Trie<String, FileMetadata> sharedRoot = fileSystem.get("shared");
+        Trie<String, FileMetadata> sharedRoot = fileSystem.get(SHARED_FOLDER_ID);
         if (sharedRoot == null) {
-            fileSystem.update(sharedRootPath, new FileMetadata("shared", "Shared with me", true, null));
+            fileSystem.update(sharedRootPath, new FileMetadata(SHARED_FOLDER_ID, "Shared with me", true, null));
         }
 
         safeCreateDirectory(sharedRootPath);
