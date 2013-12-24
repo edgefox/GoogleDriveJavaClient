@@ -1,5 +1,7 @@
 package net.edgefox.googledrive.filesystem.change.local;
 
+import net.edgefox.googledrive.filesystem.change.FileSystemChange;
+import net.edgefox.googledrive.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -49,15 +51,19 @@ public class LocalChangesWatcherTest {
 
     @Test
     public void testGetChangesAfterFilesCreate() throws Exception {
-        TimeUnit.SECONDS.sleep(3);
-        Set<Path> paths = new HashSet<>();
+        Set<FileSystemChange<Path>> changes = new HashSet<>();
         for (int i = 0; i < 10; i++) {
             Path path = trackedPath.resolve(String.format("file_%d", i));
-            paths.add(path);
             Files.createFile(path);
+            changes.add(new FileSystemChange<>(path, path.getParent(),
+                                               path.getFileName().toString(),
+                                               false,
+                                               IOUtils.getFileMd5CheckSum(path)));
         }
 
-        waitUntilPathsHandled(30000, paths.size());
+        TimeUnit.SECONDS.sleep(3);
+
+        assertEquals(localChangesWatcher.getChangesCopy(), changes);
     }
 
     @Test
@@ -65,42 +71,55 @@ public class LocalChangesWatcherTest {
         Set<Path> pathsToIgnore = new HashSet<>();
         pathsToIgnore.add(trackedPath.resolve("file_1"));
         localChangesWatcher.ignoreChanges(pathsToIgnore);
-        Set<Path> paths = new HashSet<>();
+        Set<FileSystemChange<Path>> changes = new HashSet<>();
         for (int i = 0; i < 10; i++) {
             Path path = trackedPath.resolve(String.format("file_%d", i));
-            paths.add(path);
             Files.createFile(path);
+            if (!pathsToIgnore.contains(path)) {
+                changes.add(new FileSystemChange<>(path, path.getParent(),
+                                                   path.getFileName().toString(),
+                                                   false,
+                                                   IOUtils.getFileMd5CheckSum(path)));
+            }
         }
-        
-        waitUntilPathsHandled(30000, paths.size() - pathsToIgnore.size());
+
+        TimeUnit.SECONDS.sleep(3);
+
+        assertEquals(localChangesWatcher.getChangesCopy(), changes);
+        assertEquals(changes.size(), localChangesWatcher.getChangesCopy().size());
     }
 
     @Test
     public void testGetChangesAfterNewDirectoryWithFilesCreate() throws Exception {
+        Set<FileSystemChange<Path>> changes = new HashSet<>();
         Path dirPath = trackedPath.resolve(Paths.get("one/two/three/four"));
         Files.createDirectories(dirPath);
-        int dirsCreated = trackedPath.relativize(dirPath).getNameCount();
-        
-        waitUntilPathsHandled(30000, dirsCreated);
 
-        Set<Path> paths = new HashSet<>();
+        Path current = trackedPath;
+        for (Path path : trackedPath.relativize(dirPath)) {
+            current = current.resolve(path);
+            changes.add(new FileSystemChange<>(current, current.getParent(),
+                                               current.getFileName().toString(),
+                                               true,
+                                               null));
+        }
+
+        TimeUnit.SECONDS.sleep(3);
+
+        assertEquals(localChangesWatcher.getChangesCopy(), changes);
+
         for (int i = 0; i < 10; i++) {
             Path path = dirPath.resolve(String.format("file_%d", i));
-            paths.add(path);
             Files.createFile(path);
+            changes.add(new FileSystemChange<>(path, path.getParent(),
+                                               path.getFileName().toString(),
+                                               false,
+                                               IOUtils.getFileMd5CheckSum(path)));
         }
 
-        waitUntilPathsHandled(30000, paths.size() + dirsCreated);
-    }
-    
-    private void waitUntilPathsHandled(long timeout, int expectedSize) throws InterruptedException {
-        long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime < timeout) || 
-                localChangesWatcher.getChangesCopy().size() != expectedSize) {
-        }
-        
-        assertEquals("Created paths were not handled",
-                     expectedSize, localChangesWatcher.getChangesCopy().size());
+        TimeUnit.SECONDS.sleep(3);
+
+        assertEquals(localChangesWatcher.getChangesCopy(), changes);
     }
 
     @After
