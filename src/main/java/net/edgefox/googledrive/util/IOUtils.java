@@ -1,6 +1,6 @@
 package net.edgefox.googledrive.util;
 
-import org.apache.commons.codec.digest.DigestUtils;
+import com.twmacinta.util.MD5;
 import org.apache.log4j.Logger;
 
 import java.io.FileOutputStream;
@@ -41,13 +41,7 @@ public class IOUtils {
     }
     
     public static String getFileMd5CheckSum(Path path) throws IOException {
-        byte[] digestBytes = DigestUtils.md5(Files.readAllBytes(path));
-        StringBuilder sb = new StringBuilder("");
-        for (byte digestByte : digestBytes) {
-            sb.append(Integer.toString((digestByte & 0xff) + 0x100, 16).substring(1));
-        }
-
-        return sb.toString();
+        return MD5.asHex(MD5.getHash(path.toFile()));
     }
 
     public static void safeCreateDirectory(Path newDirectoryPath) throws IOException {
