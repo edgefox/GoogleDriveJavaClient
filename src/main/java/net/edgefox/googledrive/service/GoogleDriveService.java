@@ -60,7 +60,7 @@ public class GoogleDriveService {
     private String refreshToken;
     private GoogleAuthorizationCodeFlow authFlow;
 
-    private static final String FILE_LIST_REQUIRED_FIELDS = "items(id,mimeType,title,md5Checksum,parents)";
+    private static final String FILE_LIST_REQUIRED_FIELDS = "nextPageToken, items(id,mimeType,title,md5Checksum,parents)";
     private static final String FILE_REQUIRED_FIELDS = "id,mimeType,title,md5Checksum,etag";
     private static final String FILE_DOWNLOAD_FIELDS = "id,mimeType,title,downloadUrl,exportLinks,md5Checksum,etag";
 
@@ -306,15 +306,14 @@ public class GoogleDriveService {
                 .setFields(FILE_LIST_REQUIRED_FIELDS)
                 .setQ("trashed=false")
                 .setMaxResults(1000);
-        String nextPageToken = null;
         do {
-            request.setPageToken(nextPageToken);
             FileList response = safeExecute(request);
             for (File file : response.getItems()) {
                 fileSystem.put(file.getId(), file);
             }
-            nextPageToken = response.getNextPageToken();
-        } while (nextPageToken != null);
+            request.setPageToken(response.getNextPageToken());
+        } while (request.getPageToken() != null && 
+                 !request.getPageToken().isEmpty());
 
         return fileSystem;
     }
@@ -326,7 +325,7 @@ public class GoogleDriveService {
             try {
                 if (request.getResponseClass().equals(Void.class)) {
                     request.execute();
-                    return result;
+                    return null;
                 }
 
                 result = request.execute();
