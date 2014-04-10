@@ -1,0 +1,42 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+applicationName = "google-drive"
+mainClassName = "net.edgefox.googledrive.Main"
+jettyVersion = "9.0.3.v20130506"
+
+repositories {
+    mavenCentral()
+    maven { url "http://maven.xnat.org/repo" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+    maven { url "https://github.com/aparsons/maven-repository/raw/master" }
+}
+
+dependencies {
+    /* Dependency injection */
+    compile "com.google.inject:guice:3.0"
+
+    /* Utils */
+    compile "org.apache.commons:commons-lang3:3.1"
+    compile "org.apache.commons:commons-io:1.3.2"
+    compile "com.twmacinta:fast-md5:2.7.1"
+
+    /* APIs */
+    compile "com.google.apis:google-api-services-drive:v2-rev100-1.17.0-rc"
+    compile "com.google.apis:google-api-services-oauth2:v2-rev39-1.15.0-rc"
+    compile "com.google.http-client:google-http-client-jackson2:1.15.0-rc"
+
+
+    compile "org.eclipse.jetty:jetty-server:$jettyVersion"
+    compile "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+
+    /* Logging */
+    compile "log4j:log4j:1.2.17"
+
+    /* UI */
+    compile "ch.swingfx:twinkle:1.0.0"
+
+    /* Testing */
+    testCompile "junit:junit:4.11"
+    testCompile "org.mockito:mockito-all:1.9.5-rc1"
+}
