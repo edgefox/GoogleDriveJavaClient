@@ -32,6 +32,7 @@ public class Main extends AbstractModule {
 
     @Override
     protected void configure() {
+        System.out.println("test");
         ConfigurationManager configManager = initConfigurationManager();
         bind(ConfigurationManager.class).toInstance(configManager);
         bind(Path.class).toProvider(TrackedPathProvider.class);
