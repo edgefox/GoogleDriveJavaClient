@@ -13,7 +13,7 @@ OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
 rqwerqwerqwe
 Assemble instructions: ./gradlew installApp
 
-How to run:
+How to run:asdfasdfasdfasd
  - cd $PROJECT_DIR/build/install/google-drive
  - bin/google-drive
  - enter path to the directory you would like to sync
