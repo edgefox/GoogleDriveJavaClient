@@ -11,7 +11,7 @@ It supports everything except:
 JDK: 1.7+
 OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
 rqwerqwerqwe
-Assemble instructions: ./gradlew installApp
+Assemble instructions: ./hhhgradlew installApp
 
 How to run:
  - cd $PROJECT_DIR/build/install/google-drive
