@@ -12,7 +12,7 @@ JDK: 1.7+
 OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
 rqwerqwerqwe
 Assemble instructions: ./hhhgradlew installApp
-
+asdfasdfasd
 How to run:
  - cd $PROJECT_DIR/build/install/google-drive
  - bin/google-drive
