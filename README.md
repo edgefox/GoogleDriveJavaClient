@@ -1,5 +1,5 @@
 GoogleDriveJavaClient
-=====================
+=====================adfasdfasdf
 
 Implementation of Google Drive Client in Java
 
@@ -10,8 +10,8 @@ It supports everything except:
 
 JDK: 1.7+
 OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
-
-Assemble instructions: ./gradlew installApp
+rqwerqwerqwe
+Assemble instructions: ./gradlew installAppsdfsadfsad
 
 How to run:
  - cd $PROJECT_DIR/build/install/google-drive
