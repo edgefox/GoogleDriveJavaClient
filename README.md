@@ -1,5 +1,5 @@
 GoogleDriveJavaClient
-=====================
+=====================adfasdfasdf
 
 Implementation of Google Drive Client in Java
 
@@ -8,9 +8,9 @@ It supports everything except:
  - multiple parents for file/directory (won't fix)
  - edit feature for google docs, google spreadsheets, google presentations (won't fix)
 
-JDK: 1.7+
+JDK: 1.7+asdfasdfasd
 OS: MacOS X, Linux(actualy, tested under Ubuntu 13.04 only)
-
+rqwerqwerqwe
 Assemble instructions: ./gradlew installApp
 
 How to run:
